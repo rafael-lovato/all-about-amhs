@@ -1,0 +1,2560 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All About AMHS · SK하이닉스 자동반송시스템 학습·시뮬레이션</title>
+  <meta name="description" content="SK하이닉스 IT(AMHS) 직무 학습 카드·퀴즈, Three.js 3D OHT 시뮬레이션, 개발 과정 기록 정적 웹앱" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+/* =========================================================================
+ * style.css — All About AMHS
+ * SK하이닉스 브랜드 컬러 · 반응형(모바일 우선) · 다크모드 · 탭 레이아웃
+ * ========================================================================= */
+
+:root {
+  --navy: #0C4DA1;
+  --navy-dark: #093a7a;
+  --sky: #5B9BD5;
+  --orange: #FF6B00;
+  --teal: #00A3A1;
+
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #eef2f8;
+  --text: #1a2233;
+  --text-soft: #5a6b85;
+  --border: #dfe5ef;
+  --shadow: 0 2px 10px rgba(12, 77, 161, 0.08);
+  --radius: 14px;
+
+  --cat-OHT: #0C4DA1;
+  --cat-AMR: #5B9BD5;
+  --cat-MES: #00A3A1;
+  --cat-SW: #FF6B00;
+  --cat-SF: #7C4DFF;
+  --cat-ETC: #8A94A6;
+}
+
+[data-theme="dark"] {
+  --bg: #0e1320;
+  --surface: #182032;
+  --surface-2: #212c44;
+  --text: #e8edf6;
+  --text-soft: #9aa8c2;
+  --border: #2b3850;
+  --shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  transition: background .25s, color .25s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Header ---------- */
+.app-header {
+  position: sticky; top: 0; z-index: 50;
+  background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+  color: #fff;
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow);
+}
+.app-header .brand { display: flex; align-items: center; gap: 12px; }
+.app-header .logo-badge {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: var(--orange); color: #fff;
+  display: grid; place-items: center; font-weight: 800; font-size: 15px;
+}
+.app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+.app-header .subtitle { font-size: 11px; opacity: .8; font-weight: 400; }
+.theme-toggle {
+  background: rgba(255,255,255,.15); border: none; color: #fff;
+  width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
+  font-size: 18px; transition: background .2s;
+}
+.theme-toggle:hover { background: rgba(255,255,255,.28); }
+
+/* ---------- Tab Nav ---------- */
+.tab-nav {
+  display: flex; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 66px; z-index: 40;
+  overflow-x: auto;
+}
+.tab-nav button {
+  flex: 1 1 auto; min-width: 110px;
+  padding: 14px 10px; border: none; background: none;
+  color: var(--text-soft); font-size: 14px; font-weight: 600;
+  cursor: pointer; border-bottom: 3px solid transparent;
+  transition: color .2s, border-color .2s; white-space: nowrap;
+  font-family: inherit;
+}
+.tab-nav button .ic { margin-right: 6px; }
+.tab-nav button:hover { color: var(--navy); }
+.tab-nav button.active { color: var(--navy); border-bottom-color: var(--orange); }
+[data-theme="dark"] .tab-nav button.active { color: var(--sky); }
+
+/* ---------- Layout ---------- */
+.tab-panel { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
+.tab-panel.active { display: block; animation: fade .3s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.section-title { font-size: 20px; font-weight: 700; margin: 6px 0 14px; }
+.section-sub { color: var(--text-soft); font-size: 13px; margin-bottom: 16px; }
+
+/* ---------- Sub-tabs (Tab1 modes) ---------- */
+.subtabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.subtabs button {
+  padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-soft);
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: all .2s;
+}
+.subtabs button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+.subview { display: none; }
+.subview.active { display: block; }
+
+/* ---------- Filters ---------- */
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.search-box {
+  flex: 1 1 220px; padding: 10px 14px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font-size: 14px; font-family: inherit;
+}
+.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-soft); cursor: pointer; transition: all .2s;
+}
+.chip.active { color: #fff; border-color: transparent; }
+
+/* ---------- Cards Grid ---------- */
+.card-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; cursor: pointer;
+  box-shadow: var(--shadow); transition: transform .15s, box-shadow .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(12,77,161,.16); }
+.card .cat-badge {
+  align-self: flex-start; font-size: 11px; font-weight: 700; color: #fff;
+  padding: 3px 9px; border-radius: 999px;
+}
+.card h3 { font-size: 15px; line-height: 1.4; }
+.card .meta { font-size: 12px; color: var(--text-soft); }
+.card .excerpt { font-size: 13px; color: var(--text-soft); }
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,18,32,.6);
+  display: none; align-items: center; justify-content: center; z-index: 100; padding: 18px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); color: var(--text); border-radius: 16px;
+  max-width: 560px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 24px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.3);
+}
+.modal h2 { font-size: 18px; margin-bottom: 8px; }
+.modal .close-x { float: right; cursor: pointer; font-size: 22px; color: var(--text-soft); border:none; background:none; }
+.modal .key-sentence {
+  border-left: 3px solid var(--orange); padding: 8px 12px; margin: 12px 0;
+  background: var(--surface-2); border-radius: 0 8px 8px 0; font-size: 14px;
+}
+.modal .quiz-inline { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.btn {
+  display: inline-block; padding: 9px 16px; border-radius: 10px;
+  background: var(--navy); color: #fff; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; text-decoration: none; font-family: inherit;
+}
+.btn.secondary { background: var(--surface-2); color: var(--text); }
+.btn.orange { background: var(--orange); }
+
+/* ---------- Quiz ---------- */
+.quiz-card { background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); max-width: 640px; margin: 0 auto; }
+.quiz-progress { font-size: 12px; color: var(--text-soft); margin-bottom: 8px; }
+.quiz-q { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+.quiz-options { display: grid; gap: 10px; }
+.quiz-opt {
+  text-align: left; padding: 13px 16px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); cursor: pointer; font-size: 14px;
+  font-family: inherit; transition: all .15s;
+}
+.quiz-opt:hover { border-color: var(--sky); }
+.quiz-opt.correct { background: #e6f7ee; border-color: #34c77b; color: #11663b; }
+.quiz-opt.wrong { background: #fdecec; border-color: #e85b5b; color: #8a2020; }
+.quiz-opt:disabled { cursor: default; }
+[data-theme="dark"] .quiz-opt.correct { background: #143a28; color: #7be0a8; }
+[data-theme="dark"] .quiz-opt.wrong { background: #3a1a1a; color: #e89b9b; }
+.quiz-explain { margin-top: 14px; padding: 12px; border-radius: 10px; background: var(--surface-2); font-size: 13px; display: none; }
+.quiz-explain.show { display: block; }
+.quiz-stats { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px; }
+.stat-pill { background: var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 10px 18px; text-align: center; box-shadow: var(--shadow); }
+.stat-pill .num { font-size: 22px; font-weight: 800; color: var(--navy); }
+.stat-pill .lbl { font-size: 11px; color: var(--text-soft); }
+
+/* ---------- Flashcards ---------- */
+.flash-wrap { max-width: 460px; margin: 0 auto; }
+.flashcard {
+  perspective: 1200px; height: 260px; margin-bottom: 16px; cursor: pointer;
+}
+.flash-inner {
+  position: relative; width: 100%; height: 100%; transition: transform .6s;
+  transform-style: preserve-3d;
+}
+.flashcard.flipped .flash-inner { transform: rotateY(180deg); }
+.flash-face {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  border-radius: 18px; display: flex; flex-direction: column; gap: 10px;
+  align-items: center; justify-content: center; padding: 24px; text-align: center;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.flash-front { background: linear-gradient(135deg, var(--navy), var(--sky)); color: #fff; }
+.flash-front h2 { font-size: 26px; }
+.flash-back { background: var(--surface); color: var(--text); transform: rotateY(180deg); }
+.flash-back .en { font-size: 18px; font-weight: 700; color: var(--navy); }
+.flash-back .def { font-size: 14px; color: var(--text-soft); }
+.flash-controls { display: flex; gap: 10px; justify-content: center; }
+
+/* ---------- Simulation (Tab2) ---------- */
+.sim-layout { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
+#sim-canvas-wrap { position: relative; background: #0a1120; border-radius: var(--radius); overflow: hidden; min-height: 420px; }
+#sim-canvas { display: block; width: 100%; height: 100%; }
+.sim-hud {
+  position: absolute; top: 12px; left: 12px; background: rgba(10,18,32,.7);
+  color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 12px; pointer-events: none;
+}
+.sim-panel { background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.sim-panel h3 { font-size: 14px; margin-bottom: 12px; }
+.ctrl-row { margin-bottom: 14px; }
+.ctrl-row label { font-size: 12px; color: var(--text-soft); display: block; margin-bottom: 6px; }
+.ctrl-row input[type=range] { width: 100%; accent-color: var(--orange); }
+.ctrl-row select, .ctrl-row button.full {
+  width: 100%; padding: 9px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-family: inherit; font-size: 13px;
+}
+.status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+.status-idle { background:#34c77b; } .status-move { background: var(--orange); } .status-err { background:#e85b5b; }
+.throughput { font-size: 28px; font-weight: 800; color: var(--orange); }
+.sim-hint { font-size: 11px; color: var(--text-soft); margin-top: 8px; }
+.sim-fallback { color:#fff; padding:30px; text-align:center; }
+
+/* ---------- DevLog (Tab3) ---------- */
+.dash-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 24px; }
+.num-card { background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: center; box-shadow: var(--shadow); }
+.num-card .n { font-size: 30px; font-weight: 800; color: var(--navy); }
+.num-card .l { font-size: 12px; color: var(--text-soft); }
+[data-theme="dark"] .num-card .n { color: var(--sky); }
+
+.timeline { position: relative; margin: 10px 0 30px; padding-left: 26px; }
+.timeline::before { content:""; position:absolute; left:8px; top:0; bottom:0; width:2px; background: var(--border); }
+.tl-item { position: relative; margin-bottom: 18px; }
+.tl-item::before {
+  content:""; position:absolute; left:-22px; top:4px; width:14px; height:14px;
+  border-radius:50%; background: var(--orange); border: 3px solid var(--surface);
+}
+.tl-item .tl-date { font-size: 11px; color: var(--text-soft); }
+.tl-item .tl-body { background: var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow); margin-top: 4px; }
+.tl-item .tl-tool { font-size: 11px; font-weight: 700; color: var(--navy); }
+.tl-item .tl-action { font-size: 14px; font-weight: 600; margin: 2px 0; }
+.tl-item .tl-result { font-size: 13px; color: var(--text-soft); }
+.tl-item .tl-feedback { font-size: 12px; color: var(--orange); margin-top: 4px; }
+
+.gallery { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); margin-bottom: 24px; }
+.tool-card { border-radius: var(--radius); padding: 18px; color: #fff; }
+.tool-card.cowork { background: linear-gradient(135deg,#7C4DFF,#5B9BD5); }
+.tool-card.chrome { background: linear-gradient(135deg,#FF6B00,#ffae42); }
+.tool-card.code { background: linear-gradient(135deg,#0C4DA1,#00A3A1); }
+.tool-card h4 { font-size: 15px; margin-bottom: 6px; }
+.tool-card p { font-size: 12.5px; opacity: .95; }
+.tool-card code { display:block; background: rgba(0,0,0,.25); padding: 8px; border-radius: 8px; font-size: 11px; margin-top: 8px; white-space: pre-wrap; }
+
+.feedback-box { background: var(--surface); border:1px solid var(--border); border-left: 4px solid var(--orange); border-radius: 0 12px 12px 0; padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.feedback-box .fb-q { font-weight: 700; font-size: 14px; }
+.feedback-box .fb-a { font-size: 13px; color: var(--text-soft); margin-top: 4px; }
+
+.chart-wrap { background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); max-width: 420px; margin: 0 auto 24px; }
+
+/* ---------- Loading / states ---------- */
+.loading, .empty { text-align: center; padding: 40px; color: var(--text-soft); }
+.data-source-note { font-size: 11px; color: var(--text-soft); text-align: center; margin: 8px 0; }
+.offline-banner { background: var(--orange); color:#fff; text-align:center; padding:6px; font-size:12px; display:none; }
+.offline-banner.show { display:block; }
+
+/* ---------- Footer ---------- */
+.app-footer { text-align: center; padding: 24px; font-size: 12px; color: var(--text-soft); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 860px) {
+  .sim-layout { grid-template-columns: 1fr; }
+  #sim-canvas-wrap { min-height: 340px; }
+}
+@media (max-width: 520px) {
+  .app-header h1 { font-size: 15px; }
+  .card-grid { grid-template-columns: 1fr 1fr; }
+  .section-title { font-size: 18px; }
+}
+@media (max-width: 360px) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-badge">AM</div>
+      <div>
+        <h1>All About AMHS</h1>
+        <div class="subtitle">SK하이닉스 자동반송시스템 · 학습 · 3D 시뮬레이션</div>
+      </div>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" aria-label="다크모드 전환">🌙</button>
+  </header>
+
+  <div class="offline-banner" id="offline-banner">⚠️ 오프라인/시트 미연결 — 내장 데이터로 표시 중</div>
+
+  <nav class="tab-nav" id="tab-nav">
+    <button class="active" data-tab="study"><span class="ic">📚</span>AMHS Study</button>
+    <button data-tab="sim"><span class="ic">🎮</span>Control 실습</button>
+    <button data-tab="devlog"><span class="ic">🛠️</span>개발 과정</button>
+  </nav>
+
+  <!-- ===== Tab 1: Study ===== -->
+  <section class="tab-panel active" id="tab-study">
+    <div id="study-subtabs" class="subtabs">
+      <button class="active" data-sv="cards">학습 카드</button>
+      <button data-sv="concepts">개념 사전</button>
+      <button data-sv="quiz">퀴즈</button>
+      <button data-sv="flash">플래시카드</button>
+    </div>
+
+    <div class="subview active" id="sv-cards">
+      <div class="toolbar">
+        <input class="search-box" id="card-search" type="search" placeholder="제목·내용 검색…" />
+      </div>
+      <div class="filter-chips" id="card-filters"></div>
+      <div style="height:12px"></div>
+      <div class="card-grid" id="cards-grid"><div class="loading">불러오는 중…</div></div>
+    </div>
+
+    <div class="subview" id="sv-concepts">
+      <h2 class="section-title">AMHS 핵심 개념 사전</h2>
+      <div class="filter-chips" id="concept-filters"></div>
+      <div style="height:12px"></div>
+      <div class="card-grid" id="concept-grid"></div>
+    </div>
+
+    <div class="subview" id="sv-quiz">
+      <h2 class="section-title">4지선다 퀴즈</h2>
+      <div class="quiz-stats" id="quiz-stats"></div>
+      <div id="quiz-area"></div>
+    </div>
+
+    <div class="subview" id="sv-flash">
+      <h2 class="section-title">용어 플래시카드</h2>
+      <p class="section-sub">카드를 탭하면 한국어 ↔ 영어/정의가 뒤집힙니다.</p>
+      <div id="flash-area"></div>
+    </div>
+  </section>
+
+  <!-- ===== Tab 2: Simulation ===== -->
+  <section class="tab-panel" id="tab-sim">
+    <h2 class="section-title">FAB OHT 3D 시뮬레이션</h2>
+    <p class="section-sub">장비(회색 박스)를 클릭하면 OHT가 A* 최단경로로 이동합니다. 드래그=회전, 휠=줌.</p>
+    <div class="sim-layout">
+      <div id="sim-canvas-wrap">
+        <canvas id="sim-canvas"></canvas>
+        <div class="sim-hud">
+          <div id="sim-status"><span class="status-dot status-idle"></span>대기</div>
+          <div id="sim-dest" style="margin-top:4px">목적지: -</div>
+        </div>
+      </div>
+      <div class="sim-panel">
+        <h3>⚙️ 제어 파라미터</h3>
+        <div class="ctrl-row">
+          <label>OHT 속도: <span id="speed-val">1.5 m/s</span></label>
+          <input type="range" id="speed-slider" min="0.5" max="3" step="0.1" value="1.5" />
+        </div>
+        <div class="ctrl-row">
+          <label>우선순위(긴급도)</label>
+          <select id="priority-sel">
+            <option value="high">High (긴급)</option>
+            <option value="mid" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="ctrl-row">
+          <label>실시간 상태</label>
+          <div id="sim-status2" style="font-size:13px"></div>
+        </div>
+        <div class="ctrl-row">
+          <label>처리량(Throughput)</label>
+          <div class="throughput"><span id="throughput-val">0</span></div>
+        </div>
+        <div class="ctrl-row">
+          <button class="full" id="sim-reset">↺ 시뮬레이션 리셋</button>
+        </div>
+        <div class="sim-hint">※ A* 경로탐색·디스패칭을 Vanilla JS로 직접 구현했습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Tab 3: DevLog ===== -->
+  <section class="tab-panel" id="tab-devlog">
+    <h2 class="section-title">📊 데이터 현황</h2>
+    <div class="dash-grid" id="dash-grid"></div>
+    <div class="chart-wrap"><canvas id="catDonut" height="240"></canvas></div>
+
+    <h2 class="section-title">🧰 Claude 도구 활용</h2>
+    <div class="gallery">
+      <div class="tool-card cowork"><h4>🧭 Claude Cowork</h4><p>프로젝트 총괄·오케스트레이션과 반복 자가 평가(Self-feedback) 루프를 담당.</p><code>STEP1→6 자율 실행 / 데이터 정제 / 검증 채점</code></div>
+      <div class="tool-card chrome"><h4>🌐 Claude in Chrome</h4><p>SK하이닉스 뉴스룸을 6개 검색어로 크롤링해 실기사·기술 키워드 추출.</p><code>news.skhynix.co.kr → OHT·스마트팩토리·Physical AI</code></div>
+      <div class="tool-card code"><h4>💻 Claude Code</h4><p>Three.js 3D OHT 시뮬레이션과 A* 경로탐색 알고리즘을 직접 구현.</p><code>class AStarPathfinder { f = g + h }</code></div>
+    </div>
+
+    <h2 class="section-title">🗓️ 프로젝트 타임라인</h2>
+    <div class="timeline" id="timeline"></div>
+
+    <h2 class="section-title">🔍 Self-feedback</h2>
+    <div id="feedback-list"></div>
+  </section>
+
+  <div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal-body"></div></div>
+
+  <footer class="app-footer">
+    All About AMHS · 정적 배포(GitHub Pages) · 데이터: Google Sheets ·
+    <span id="data-source">데이터 로드 중…</span>
+  </footer>
+
+  <!-- CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- App -->
+  <script>
+/* =========================================================================
+ * config.js — All About AMHS 전역 설정
+ * - Google Sheets 문서 ID 기반 gviz CSV 엔드포인트
+ * - Sheets가 "링크가 있는 모든 사용자: 뷰어" 또는 웹 게시 상태면 fetch 동작
+ * - fetch 실패/오프라인 시 data.js가 window.FALLBACK_DATA로 자동 대체
+ * ========================================================================= */
+(function () {
+  "use strict";
+
+  // 실제 스프레드시트 문서 ID (사용자 시트)
+  const SHEET_DOC_ID = "1tVHTjhypC59zJ_B4Qe-jSwTGkGFl_jdD3oEA3G7FNFI";
+
+  // gviz CSV 엔드포인트 — 시트 탭 이름 기반 (gid 불필요)
+  const gviz = (sheetName) =>
+    `https://docs.google.com/spreadsheets/d/${SHEET_DOC_ID}` +
+    `/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+
+  window.APP_CONFIG = {
+    SHEET_DOC_ID,
+
+    // 시트 탭 이름은 Google Sheets의 실제 탭 이름과 정확히 일치해야 함
+    SHEETS: {
+      articles: gviz("articles"),
+      concepts: gviz("concepts"),
+      quiz: gviz("quiz_bank"),
+      devlog: gviz("dev_log"),
+      glossary: gviz("glossary"),
+    },
+
+    // 캐시: 24시간 (ms)
+    CACHE_TTL_MS: 24 * 60 * 60 * 1000,
+    CACHE_PREFIX: "amhs_cache_",
+
+    // 카테고리 표준 6분류
+    CATEGORIES: ["OHT기술", "AMR기술", "MES연계", "SW알고리즘", "스마트팩토리", "기타"],
+
+    // 카테고리별 색상 (차트/배지 공용)
+    CATEGORY_COLORS: {
+      OHT기술: "#0C4DA1",
+      AMR기술: "#5B9BD5",
+      MES연계: "#00A3A1",
+      SW알고리즘: "#FF6B00",
+      스마트팩토리: "#7C4DFF",
+      기타: "#8A94A6",
+    },
+
+    // SK하이닉스 브랜드 컬러
+    BRAND: { navy: "#0C4DA1", sky: "#5B9BD5", orange: "#FF6B00" },
+
+    // 퀴즈 점수 저장 키 (LocalStorage)
+    QUIZ_STORAGE_KEY: "amhs_quiz_history",
+    FLASHCARD_STORAGE_KEY: "amhs_flashcard_progress",
+    THEME_STORAGE_KEY: "amhs_theme",
+
+    VERSION: "1.0.0",
+  };
+})();
+
+</script>
+  <script>
+// AUTO-GENERATED 폴백 데이터 — Sheets fetch 실패/오프라인 시 사용
+// (data/*.csv 와 동일 내용. Google Sheets 가 우선, 실패 시 이 데이터로 동작)
+window.FALLBACK_DATA = {
+"articles": [
+{
+"id": "1",
+"title": "[AI 산업 생태계 톺아보기 2편] 메모리에서 시작되는 AI 혁신, SK하이닉스",
+"date": "2024-11-20",
+"summary": "SK하이닉스가 AI 시대의 메모리 리더십과 스마트팩토리 기반 제조 경쟁력을 소개한 기획 기사. FAB 운영의 디지털 전환 방향을 설명한다.",
+"key_sentence": "AI 혁신은 데이터를 처리·저장하는 메모리에서 시작되며, 이를 뒷받침하는 것이 자동화된 스마트팩토리다.",
+"category": "스마트팩토리",
+"url": "https://news.skhynix.co.kr/exploring-the-ai-industry-ep2/",
+"quiz_q": "SK하이닉스가 AI 제조 경쟁력의 핵심으로 강조한 생산 체계는?",
+"quiz_a": "스마트팩토리(자동화 기반 제조)"
+},
+{
+"id": "2",
+"title": "[2026 The Leaders] 박준덕 부사장 — Physical AI와 로봇·자율주행 제조 설비",
+"date": "2026-03-11",
+"summary": "Physical AI(로봇·자율주행·제조 설비에 적용되는 AI)가 SK하이닉스의 기회라는 임원 인터뷰. AMR·로봇 기반 물류 자동화 흐름과 맞닿아 있다.",
+"key_sentence": "Physical AI는 로봇, 자율주행, 제조 설비 등 물리적 시스템에 적용되는 AI를 의미한다.",
+"category": "AMR기술",
+"url": "https://news.skhynix.co.kr/2026-new-executive-bakjundeok/",
+"quiz_q": "Physical AI가 적용되는 물리적 시스템 3가지는?",
+"quiz_a": "로봇·자율주행·제조 설비"
+},
+{
+"id": "3",
+"title": "SK하이닉스, AI 솔루션 'Panoptes VM' 양산 적용 (Gauss Labs 협업, SPIE AL 2026)",
+"date": "2026-02-15",
+"summary": "Gauss Labs와 협업한 가상 계측(Virtual Metrology) AI 'Panoptes VM'을 양산에 적용. 공정 결과를 예측해 계측 부하를 줄이는 SW 알고리즘 사례.",
+"key_sentence": "Panoptes VM은 웨이퍼를 직접 측정하지 않고도 공정 결과를 예측하는 가상 계측 AI다.",
+"category": "SW알고리즘",
+"url": "https://news.skhynix.co.kr/spie-al-2026-with-gauss-labs/",
+"quiz_q": "Panoptes VM이 수행하는 AI 기능은?",
+"quiz_a": "가상 계측(공정 결과 예측)"
+},
+{
+"id": "4",
+"title": "[앰버서더 직무 리포트 Ep1] 기반기술·DMI 직무 소개",
+"date": "2024-08-10",
+"summary": "SK하이닉스 현직자가 기반기술·계측(DMI) 직무를 소개한 채용 콘텐츠. IT/자동화 직무 이해에 참고된다.",
+"key_sentence": "현장의 데이터를 기반으로 공정과 설비를 최적화하는 것이 기반기술 직무의 핵심이다.",
+"category": "기타",
+"url": "https://news.skhynix.co.kr/ambassador-job-report-ep1/",
+"quiz_q": "기반기술 직무가 데이터를 활용해 최적화하는 대상은?",
+"quiz_a": "공정과 설비"
+},
+{
+"id": "5",
+"title": "SK하이닉스 도승용 부사장, 과학·정보통신의 날 동탑산업훈장 수상",
+"date": "2025-04-22",
+"summary": "AI/DT 기반 스마트팩토리 시스템 구축으로 HBM·메모리 제조 기술력을 높인 공로로 동탑산업훈장 수상.",
+"key_sentence": "AI/DT 기반 스마트팩토리 시스템을 구축해 HBM과 메모리 제품의 시장 경쟁력을 강화했다.",
+"category": "스마트팩토리",
+"url": "https://news.skhynix.co.kr/?s=%EB%8F%99%ED%83%91%EC%82%B0%EC%97%85%ED%9B%88%EC%9E%A5",
+"quiz_q": "도승용 부사장이 구축한 시스템의 기반 기술 2가지는?",
+"quiz_a": "AI와 DT(디지털 전환)"
+},
+{
+"id": "6",
+"title": "[넷제로 2050] SK하이닉스, AI·DT 기반 설비 운영 최적화로 에너지 절감",
+"date": "2024-06-05",
+"summary": "설비 운영을 AI·DT로 최적화해 에너지를 절감하는 사례. AMHS 반송 효율 최적화와 같은 맥락의 운영 최적화 접근.",
+"key_sentence": "AI·DT 기반의 설비 운영 최적화는 생산성과 에너지 효율을 동시에 끌어올린다.",
+"category": "스마트팩토리",
+"url": "https://news.skhynix.co.kr/?s=%EB%84%B7%EC%A0%9C%EB%A1%9C",
+"quiz_q": "설비 운영 최적화로 동시에 달성한 두 가지 목표는?",
+"quiz_a": "생산성 향상과 에너지 절감"
+},
+{
+"id": "7",
+"title": "SK하이닉스, 웨이퍼 제조 공정 결과 예측 AI 솔루션 도입",
+"date": "2024-10-01",
+"summary": "웨이퍼 공정 결과를 예측하는 AI를 양산에 적용해 품질·수율을 관리. 데이터 기반 예측 제어의 대표 사례.",
+"key_sentence": "공정 결과를 사전에 예측해 이상을 조기에 감지하고 대응한다.",
+"category": "SW알고리즘",
+"url": "https://news.skhynix.co.kr/?s=Panoptes",
+"quiz_q": "공정 결과 예측 AI의 주요 효과는?",
+"quiz_a": "이상 조기 감지 및 수율 관리"
+},
+{
+"id": "8",
+"title": "SK하이닉스, 생성형 AI 플랫폼 'GaiA' 공개",
+"date": "2024-12-10",
+"summary": "사내 생성형 AI 플랫폼 GaiA를 통해 업무·제조 데이터 활용을 가속. AI 전환(AX) 로드맵의 일부.",
+"key_sentence": "GaiA 플랫폼으로 전사적 AI 전환을 선도한다.",
+"category": "SW알고리즘",
+"url": "https://news.skhynix.co.kr/?s=GaiA",
+"quiz_q": "SK하이닉스의 사내 생성형 AI 플랫폼 이름은?",
+"quiz_a": "GaiA"
+},
+{
+"id": "9",
+"title": "[K반도체 스토리] 디지털 트랜스포메이션 (Ep1)",
+"date": "2023-05-18",
+"summary": "반도체 제조의 디지털 전환을 다룬 기획. MES·데이터 연계를 통한 통합 제어 흐름을 설명.",
+"key_sentence": "제조 데이터를 통합 관리하는 MES가 디지털 전환의 중심에 있다.",
+"category": "MES연계",
+"url": "https://news.skhynix.co.kr/?s=%EB%94%94%EC%A7%80%ED%84%B8%ED%8A%B8%EB%9E%9C%EC%8A%A4%ED%8F%AC%EB%A9%94%EC%9D%B4%EC%85%98",
+"quiz_q": "제조 디지털 전환의 중심에 있는 시스템은?",
+"quiz_a": "MES(제조실행시스템)"
+},
+{
+"id": "10",
+"title": "[전공별 취업 스토리②] 산업공학 전공자의 SK하이닉스 직무",
+"date": "2023-03-22",
+"summary": "산업공학 전공자가 수행하는 생산 최적화·물류·스케줄링 직무 소개. AMHS 디스패칭/스케줄링과 직접 연관.",
+"key_sentence": "산업공학은 생산 흐름과 물류를 최적화하는 학문으로 반도체 제조와 잘 맞는다.",
+"category": "기타",
+"url": "https://news.skhynix.co.kr/?s=%EC%82%B0%EC%97%85%EA%B3%B5%ED%95%99",
+"quiz_q": "산업공학 전공이 반도체 제조에서 최적화하는 대상은?",
+"quiz_a": "생산 흐름과 물류"
+},
+{
+"id": "11",
+"title": "에너지 효율을 높이는 스마트 장비 유지보수와 가상물리시스템(CPS)",
+"date": "2021-09-15",
+"summary": "장비 유지보수에 CPS·CBM(상태기반정비)을 적용. OHT의 전동기기를 모니터링해 예지보전하는 사례를 직접 언급.",
+"key_sentence": "FAB의 반송을 담당하는 장비인 OHT(Overhead Hoist Transfer)의 전동기기를 모니터링한다.",
+"category": "OHT기술",
+"url": "https://news.skhynix.co.kr/?s=CPS",
+"quiz_q": "본문에서 반송을 담당하는 장비로 직접 언급된 것은?",
+"quiz_a": "OHT(Overhead Hoist Transfer)"
+},
+{
+"id": "12",
+"title": "SK하이닉스, 'SK AI Summit 2025'서 풀 스택 AI 메모리 비전 제시",
+"date": "2025-11-05",
+"summary": "데이터센터·모빌리티·산업 자동화로 확장하는 AI 메모리 비전 발표. 산업 자동화가 핵심 응용처로 제시됨.",
+"key_sentence": "산업 자동화 등 응용 분야로 확장 가능한 AI 메모리를 개발하고 있다.",
+"category": "스마트팩토리",
+"url": "https://news.skhynix.co.kr/?s=AI+Summit",
+"quiz_q": "발표에서 AI 메모리의 확장 응용처로 언급된 분야는?",
+"quiz_a": "데이터센터·모빌리티·산업 자동화"
+},
+{
+"id": "13",
+"title": "[기술 레퍼런스] SEMI E84 — 로드포트 자동 핸드오프 인터페이스",
+"date": "2012-01-01",
+"summary": "SEMI E84는 반송 장비(OHT/AGV)와 장비 로드포트 간 비접촉 핸드오프(적재/하역) 신호 교환을 규정하는 국제 표준. AMHS 자동 이적재의 기본 규격.",
+"key_sentence": "E84는 반송차와 장비 간 적재/하역 신호를 정의하는 핸드오프 인터페이스 표준이다.",
+"category": "MES연계",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "SEMI E84가 규정하는 것은?",
+"quiz_a": "반송차-장비 간 핸드오프(이적재) 인터페이스"
+},
+{
+"id": "14",
+"title": "[기술 레퍼런스] SEMI E87 — 캐리어 관리 시스템(CMS)",
+"date": "2010-01-01",
+"summary": "SEMI E87(CMS)은 FOUP 등 캐리어의 입출고·할당·추적을 관리하는 표준. MES/MCS가 캐리어 위치를 일관되게 추적하도록 한다.",
+"key_sentence": "E87은 FOUP 캐리어의 입출고와 위치 추적을 표준화한다.",
+"category": "MES연계",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "SEMI E87(CMS)이 관리하는 대상은?",
+"quiz_a": "FOUP 등 캐리어"
+},
+{
+"id": "15",
+"title": "[기술 레퍼런스] SEMI E88 — 자동 스토커 사양",
+"date": "2010-01-01",
+"summary": "SEMI E88은 자동 스토커(AS/RS)의 동작·인터페이스를 규정. 스토커는 FOUP를 임시 보관·버퍼링하는 핵심 저장 설비.",
+"key_sentence": "스토커는 FOUP를 임시 보관하고 반송 흐름을 버퍼링하는 자동 창고다.",
+"category": "OHT기술",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "스토커(Stocker)의 주요 역할은?",
+"quiz_a": "FOUP 임시 보관 및 버퍼링"
+},
+{
+"id": "16",
+"title": "[기술 레퍼런스] SEMI E10 — 설비 신뢰성·가용성·유지보수성(RAM)",
+"date": "2007-01-01",
+"summary": "SEMI E10은 설비 상태를 6가지로 분류하고 가동률(Availability)·신뢰성을 측정하는 지표 표준. AMHS 가용성 관리의 기준.",
+"key_sentence": "E10은 설비 상태를 정의하고 가동률·신뢰성·유지보수성을 측정한다.",
+"category": "기타",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "SEMI E10이 측정하는 3대 지표(RAM)는?",
+"quiz_a": "신뢰성·가용성·유지보수성"
+},
+{
+"id": "17",
+"title": "[기술 레퍼런스] OHT — 천장 반송 시스템 개요",
+"date": "2020-01-01",
+"summary": "OHT(Overhead Hoist Transport)는 천장 레일을 따라 FOUP를 운반하는 인터베이/인트라베이 반송 차량. 바닥 공간을 점유하지 않아 클린룸 효율이 높다.",
+"key_sentence": "OHT는 천장 레일을 주행하며 호이스트로 FOUP를 들어올려 운반한다.",
+"category": "OHT기술",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "OHT가 FOUP를 운반하는 방식은?",
+"quiz_a": "천장 레일 주행 + 호이스트 승강"
+},
+{
+"id": "18",
+"title": "[기술 레퍼런스] AMR — 자율주행 이동로봇의 FAB 적용",
+"date": "2021-01-01",
+"summary": "AMR(Autonomous Mobile Robot)은 라이다·SLAM으로 자기 위치를 추정하고 장애물을 회피하며 바닥을 자율 주행. 고정 경로의 AGV와 달리 동적 경로를 사용.",
+"key_sentence": "AMR은 SLAM 기반으로 지도를 생성하고 동적으로 경로를 계획한다.",
+"category": "AMR기술",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "AMR이 AGV와 구분되는 핵심 특징은?",
+"quiz_a": "동적 경로 계획(자율주행)"
+},
+{
+"id": "19",
+"title": "[기술 레퍼런스] AGV vs AMR — 고정경로와 자율경로",
+"date": "2021-06-01",
+"summary": "AGV는 자기테이프·마커 등 고정 경로를 따르고, AMR은 센서 기반으로 자유롭게 경로를 생성. 유연성과 초기 인프라 측면에서 차이가 있다.",
+"key_sentence": "AGV는 고정 경로, AMR은 자율 경로라는 점이 가장 큰 차이다.",
+"category": "AMR기술",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "AGV의 주행 경로 특징은?",
+"quiz_a": "사전 지정된 고정 경로"
+},
+{
+"id": "20",
+"title": "[기술 레퍼런스] FOUP과 EFEM",
+"date": "2019-01-01",
+"summary": "FOUP(Front Opening Unified Pod)는 300mm 웨이퍼 25매를 담는 밀폐 용기, EFEM은 FOUP과 장비 내부를 연결해 웨이퍼를 이송하는 전단부 설비.",
+"key_sentence": "FOUP은 웨이퍼를 오염으로부터 보호하는 밀폐 캐리어다.",
+"category": "OHT기술",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "FOUP에 담기는 표준 웨이퍼 수량은?",
+"quiz_a": "300mm 웨이퍼 25매"
+},
+{
+"id": "21",
+"title": "[기술 레퍼런스] MCS와 MES 연계",
+"date": "2020-09-01",
+"summary": "MCS(Material Control System)는 반송 설비를 직접 제어하고, 상위 MES의 생산 지시를 받아 반송 작업을 디스패칭. AMHS 제어의 두뇌.",
+"key_sentence": "MCS는 MES 지시를 받아 반송차에 작업을 배정(디스패칭)한다.",
+"category": "MES연계",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "반송 작업을 차량에 배정하는 시스템은?",
+"quiz_a": "MCS(Material Control System)"
+},
+{
+"id": "22",
+"title": "[기술 레퍼런스] AMHS 디스패칭과 경로탐색 알고리즘",
+"date": "2021-03-01",
+"summary": "반송 작업 배정과 최단경로 계산에 A*·다익스트라 등이 사용되며, 혼잡 회피를 위해 가중치·우선순위를 반영. 본 앱 Tab2에서 A*를 직접 구현.",
+"key_sentence": "A*는 휴리스틱을 사용해 최단경로를 효율적으로 탐색한다.",
+"category": "SW알고리즘",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "최단경로 탐색에 휴리스틱을 사용하는 알고리즘은?",
+"quiz_a": "A* 알고리즘"
+},
+{
+"id": "23",
+"title": "[기술 레퍼런스] 인터베이/인트라베이 반송",
+"date": "2020-05-01",
+"summary": "인트라베이는 베이 내부 장비 간 이동, 인터베이는 베이와 베이 사이 이동을 담당. OHT 트랙은 두 계층으로 구성된다.",
+"key_sentence": "인터베이는 베이 간, 인트라베이는 베이 내부 반송을 담당한다.",
+"category": "OHT기술",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "베이와 베이 사이를 잇는 반송 계층은?",
+"quiz_a": "인터베이(Interbay)"
+},
+{
+"id": "24",
+"title": "[기술 레퍼런스] 스마트팩토리와 디지털 트윈",
+"date": "2022-02-01",
+"summary": "디지털 트윈으로 FAB·반송 흐름을 가상에서 모사해 병목을 사전 분석. 본 앱의 3D 시뮬레이션이 같은 개념의 축소판.",
+"key_sentence": "디지털 트윈은 물리 설비를 가상으로 복제해 사전에 검증한다.",
+"category": "스마트팩토리",
+"url": "https://www.semi.org/en/products-services/standards",
+"quiz_q": "FAB을 가상으로 복제해 검증하는 기술은?",
+"quiz_a": "디지털 트윈"
+},
+{
+"id": "25",
+"title": "[직무 기술서] SK하이닉스 IT(AMHS) 직무 소개",
+"date": "2026-06-01",
+"summary": "SK하이닉스 채용 공식 JD. AMHS는 FAB 제조 환경 변화에 맞춰 안정적 자동반송 환경을 제공하고, Simulation 기반 신규 FAB 기획/설계/구축과 Data 기반 운영 최적화를 담당. 4대 업무는 구축(OHT·Robot·Conveyor H/W), 제어(MES 연계), SW개발(반송로직·스케줄링·경로탐색), 운영(Data 분석·개선).",
+"key_sentence": "Simulation 기반 신규 FAB 기획·설계·구축과 Data 기반 효율적 AMHS 운영을 수행한다.",
+"category": "스마트팩토리",
+"url": "https://careers.skhynix.com/",
+"quiz_q": "SK하이닉스 IT(AMHS) 직무의 4대 업무 영역은?",
+"quiz_a": "구축·제어·SW개발·운영"
+}
+],
+"concepts": [
+{
+"id": "1",
+"term": "AMHS",
+"definition": "반도체 FAB 내 자재(FOUP 등)를 자동으로 운반·보관·추적하는 통합 자동물류시스템.",
+"category": "스마트팩토리",
+"difficulty": "1",
+"example": "OHT·AMR·스토커·MCS가 하나로 연동되어 무인 반송을 수행",
+"related_terms": "OHT;AMR;MCS;스토커"
+},
+{
+"id": "2",
+"term": "OHT",
+"definition": "천장 레일을 주행하며 호이스트로 FOUP를 승강·운반하는 대표 반송차.",
+"category": "OHT기술",
+"difficulty": "1",
+"example": "공정 장비 간 FOUP를 천장 트랙으로 신속 이송",
+"related_terms": "레일;호이스트;FOUP"
+},
+{
+"id": "3",
+"term": "AMR",
+"definition": "센서와 SLAM으로 스스로 위치를 추정하고 동적 경로로 주행하는 자율이동로봇.",
+"category": "AMR기술",
+"difficulty": "2",
+"example": "고정 경로 없이 장애물을 회피하며 자재를 운반",
+"related_terms": "SLAM;라이다;AGV"
+},
+{
+"id": "4",
+"term": "AGV",
+"definition": "자기테이프·마커 등 사전 지정된 고정 경로를 따라 주행하는 무인운반차.",
+"category": "AMR기술",
+"difficulty": "1",
+"example": "정해진 라인을 따라 카트를 견인",
+"related_terms": "고정경로;AMR"
+},
+{
+"id": "5",
+"term": "FOUP",
+"definition": "300mm 웨이퍼 25매를 담아 오염으로부터 보호하는 표준 밀폐 캐리어.",
+"category": "OHT기술",
+"difficulty": "1",
+"example": "OHT가 FOUP를 들어 로드포트에 적재",
+"related_terms": "웨이퍼;로드포트;EFEM"
+},
+{
+"id": "6",
+"term": "EFEM",
+"definition": "FOUP과 장비 내부를 연결해 웨이퍼를 이송하는 전단부 설비.",
+"category": "OHT기술",
+"difficulty": "2",
+"example": "로드포트의 FOUP에서 웨이퍼를 꺼내 챔버로 전달",
+"related_terms": "로드포트;FOUP;아토모스"
+},
+{
+"id": "7",
+"term": "로드포트",
+"definition": "장비 전면에서 FOUP를 거치하고 도킹하는 표준 인터페이스 지점.",
+"category": "OHT기술",
+"difficulty": "1",
+"example": "OHT가 로드포트 위에 FOUP를 내려놓음",
+"related_terms": "FOUP;SEMI E84;EFEM"
+},
+{
+"id": "8",
+"term": "스토커",
+"definition": "FOUP를 임시 보관·버퍼링하는 자동 창고(AS/RS).",
+"category": "OHT기술",
+"difficulty": "1",
+"example": "공정 대기 중인 FOUP를 선반에 보관",
+"related_terms": "SEMI E88;버퍼;AS/RS"
+},
+{
+"id": "9",
+"term": "MCS",
+"definition": "반송 설비를 직접 제어하고 작업을 차량에 배정하는 자재제어시스템.",
+"category": "MES연계",
+"difficulty": "2",
+"example": "MES 지시를 받아 OHT에 반송 명령 전달",
+"related_terms": "MES;디스패칭;MHS"
+},
+{
+"id": "10",
+"term": "MES",
+"definition": "생산 계획·실행·추적을 담당하는 제조실행시스템.",
+"category": "MES연계",
+"difficulty": "2",
+"example": "공정 진행 상황에 따라 다음 반송을 지시",
+"related_terms": "MCS;디스패칭;스케줄링"
+},
+{
+"id": "11",
+"term": "디스패칭",
+"definition": "대기 중인 반송 작업을 어떤 차량에 언제 배정할지 결정하는 의사결정.",
+"category": "SW알고리즘",
+"difficulty": "2",
+"example": "가장 가까운 유휴 OHT에 긴급 작업 우선 배정",
+"related_terms": "MCS;우선순위;스케줄링"
+},
+{
+"id": "12",
+"term": "경로탐색",
+"definition": "출발지에서 목적지까지 최단·최적 경로를 계산하는 과정.",
+"category": "SW알고리즘",
+"difficulty": "2",
+"example": "A*로 혼잡을 피해 OHT 경로 산출",
+"related_terms": "A*;다익스트라;그래프"
+},
+{
+"id": "13",
+"term": "A* 알고리즘",
+"definition": "휴리스틱(h)과 실제비용(g)을 합한 f=g+h로 최단경로를 효율 탐색.",
+"category": "SW알고리즘",
+"difficulty": "3",
+"example": "트랙 노드 그래프에서 목적지까지 최단경로 계산",
+"related_terms": "휴리스틱;다익스트라;경로탐색"
+},
+{
+"id": "14",
+"term": "다익스트라",
+"definition": "가중 그래프에서 시작점 기준 최단경로를 구하는 알고리즘.",
+"category": "SW알고리즘",
+"difficulty": "3",
+"example": "휴리스틱 없이 모든 인접 노드 비용을 누적 비교",
+"related_terms": "A*;그래프;경로탐색"
+},
+{
+"id": "15",
+"term": "휴리스틱",
+"definition": "목표까지 남은 비용을 추정하는 함수(예: 유클리드 거리).",
+"category": "SW알고리즘",
+"difficulty": "3",
+"example": "A*에서 직선거리로 남은 거리를 추정",
+"related_terms": "A*;유클리드거리"
+},
+{
+"id": "16",
+"term": "인터베이",
+"definition": "베이와 베이 사이를 잇는 상위 반송 계층.",
+"category": "OHT기술",
+"difficulty": "2",
+"example": "공정 구역 간 FOUP 장거리 이송",
+"related_terms": "인트라베이;트랙;OHT"
+},
+{
+"id": "17",
+"term": "인트라베이",
+"definition": "하나의 베이 내부 장비 간을 잇는 반송 계층.",
+"category": "OHT기술",
+"difficulty": "2",
+"example": "같은 구역 내 장비 사이 단거리 이송",
+"related_terms": "인터베이;트랙;OHT"
+},
+{
+"id": "18",
+"term": "SEMI E84",
+"definition": "반송차와 장비 로드포트 간 비접촉 핸드오프 신호 인터페이스 표준.",
+"category": "MES연계",
+"difficulty": "3",
+"example": "OHT가 적재 전 E84 신호로 안전 확인",
+"related_terms": "SEMI;로드포트;핸드오프"
+},
+{
+"id": "19",
+"term": "SEMI E87",
+"definition": "FOUP 등 캐리어의 입출고·할당·추적을 규정하는 캐리어관리(CMS) 표준.",
+"category": "MES연계",
+"difficulty": "3",
+"example": "캐리어 ID로 위치를 일관 추적",
+"related_terms": "SEMI;CMS;FOUP"
+},
+{
+"id": "20",
+"term": "SEMI E88",
+"definition": "자동 스토커(AS/RS)의 동작·인터페이스를 규정하는 표준.",
+"category": "OHT기술",
+"difficulty": "3",
+"example": "스토커 입출고 명령 규격화",
+"related_terms": "SEMI;스토커;AS/RS"
+},
+{
+"id": "21",
+"term": "SEMI E10",
+"definition": "설비 상태 6분류와 가동률·신뢰성을 측정하는 RAM 표준.",
+"category": "기타",
+"difficulty": "3",
+"example": "설비 가동률(Availability) 산출 기준",
+"related_terms": "RAM;가동률;신뢰성"
+},
+{
+"id": "22",
+"term": "처리량",
+"definition": "단위 시간당 완료한 반송/생산 작업 수(Throughput).",
+"category": "스마트팩토리",
+"difficulty": "1",
+"example": "시간당 OHT 반송 건수로 효율 측정",
+"related_terms": "사이클타임;가동률"
+},
+{
+"id": "23",
+"term": "사이클 타임",
+"definition": "하나의 반송/공정이 시작부터 완료까지 걸리는 시간.",
+"category": "스마트팩토리",
+"difficulty": "2",
+"example": "FOUP 픽업~배송 완료까지 소요 시간",
+"related_terms": "처리량;병목"
+},
+{
+"id": "24",
+"term": "병목",
+"definition": "전체 흐름의 속도를 제한하는 가장 느린 구간/설비.",
+"category": "스마트팩토리",
+"difficulty": "2",
+"example": "교차 트랙 혼잡으로 반송 지연 발생",
+"related_terms": "처리량;디스패칭"
+},
+{
+"id": "25",
+"term": "가동률",
+"definition": "설비가 실제로 가동된 시간 비율(Availability).",
+"category": "기타",
+"difficulty": "2",
+"example": "OHT 가동률 99% 목표 관리",
+"related_terms": "SEMI E10;신뢰성"
+},
+{
+"id": "26",
+"term": "디지털 트윈",
+"definition": "물리 설비/공정을 가상으로 복제해 사전 분석·검증하는 기술.",
+"category": "스마트팩토리",
+"difficulty": "2",
+"example": "FAB 반송 흐름을 가상에서 시뮬레이션",
+"related_terms": "시뮬레이션;CPS;스마트팩토리"
+},
+{
+"id": "27",
+"term": "CPS",
+"definition": "물리 시스템과 사이버(SW) 시스템을 결합한 가상물리시스템.",
+"category": "스마트팩토리",
+"difficulty": "3",
+"example": "OHT 전동기기 데이터를 실시간 모니터링",
+"related_terms": "디지털트윈;CBM;센서"
+},
+{
+"id": "28",
+"term": "CBM",
+"definition": "설비 상태 데이터를 기반으로 정비 시점을 결정하는 상태기반정비.",
+"category": "기타",
+"difficulty": "2",
+"example": "진동·전류 데이터로 고장 전 예지보전",
+"related_terms": "CPS;예지보전;센서"
+},
+{
+"id": "29",
+"term": "SLAM",
+"definition": "이동 중 동시에 지도를 작성하고 자기 위치를 추정하는 기법.",
+"category": "AMR기술",
+"difficulty": "3",
+"example": "AMR이 라이다로 실내 지도 생성·주행",
+"related_terms": "AMR;라이다;자율주행"
+},
+{
+"id": "30",
+"term": "충돌회피",
+"definition": "반송차들이 서로/장애물과 부딪치지 않도록 경로·속도를 조정하는 제어.",
+"category": "SW알고리즘",
+"difficulty": "2",
+"example": "교차로에서 우선순위로 통행 순서 조정",
+"related_terms": "디스패칭;AMR;안전"
+}
+],
+"quiz_bank": [
+{
+"id": "1",
+"question": "AMHS의 풀네임으로 옳은 것은?",
+"options_a": "Automated Material Handling System",
+"options_b": "Advanced Machine Hosting Service",
+"options_c": "Automatic Motor Handling System",
+"options_d": "Assembly Material Help System",
+"answer": "a",
+"explanation": "AMHS는 자동자재취급(반송)시스템을 의미한다.",
+"category": "스마트팩토리",
+"difficulty": "1"
+},
+{
+"id": "2",
+"question": "천장 레일을 주행하며 FOUP를 운반하는 반송차는?",
+"options_a": "AGV",
+"options_b": "OHT",
+"options_c": "Conveyor",
+"options_d": "Stocker",
+"answer": "b",
+"explanation": "OHT(Overhead Hoist Transport)는 천장 레일 기반 반송차다.",
+"category": "OHT기술",
+"difficulty": "1"
+},
+{
+"id": "3",
+"question": "OHT가 FOUP를 들어올리는 데 사용하는 장치는?",
+"options_a": "집게(Gripper)와 호이스트",
+"options_b": "컨베이어 벨트",
+"options_c": "로봇 팔만",
+"options_d": "에어 슈터",
+"answer": "a",
+"explanation": "OHT는 호이스트로 FOUP를 승강한다.",
+"category": "OHT기술",
+"difficulty": "1"
+},
+{
+"id": "4",
+"question": "고정 경로를 따라 주행하는 무인운반차는?",
+"options_a": "AMR",
+"options_b": "드론",
+"options_c": "AGV",
+"options_d": "OHT",
+"answer": "c",
+"explanation": "AGV는 자기테이프 등 고정 경로를 따른다.",
+"category": "AMR기술",
+"difficulty": "1"
+},
+{
+"id": "5",
+"question": "센서와 SLAM으로 동적 경로를 생성하는 로봇은?",
+"options_a": "AGV",
+"options_b": "AMR",
+"options_c": "Stocker",
+"options_d": "EFEM",
+"answer": "b",
+"explanation": "AMR은 SLAM 기반 자율주행으로 동적 경로를 사용한다.",
+"category": "AMR기술",
+"difficulty": "2"
+},
+{
+"id": "6",
+"question": "FOUP에 담기는 표준 웨이퍼 수량은?",
+"options_a": "12매",
+"options_b": "50매",
+"options_c": "25매",
+"options_d": "100매",
+"answer": "c",
+"explanation": "300mm FOUP은 웨이퍼 25매를 담는다.",
+"category": "OHT기술",
+"difficulty": "1"
+},
+{
+"id": "7",
+"question": "FOUP과 장비 내부를 연결해 웨이퍼를 이송하는 전단부 설비는?",
+"options_a": "EFEM",
+"options_b": "Stocker",
+"options_c": "OHT",
+"options_d": "MCS",
+"answer": "a",
+"explanation": "EFEM이 FOUP과 챔버 사이 웨이퍼를 이송한다.",
+"category": "OHT기술",
+"difficulty": "2"
+},
+{
+"id": "8",
+"question": "FOUP를 임시 보관·버퍼링하는 자동 창고는?",
+"options_a": "로드포트",
+"options_b": "스토커",
+"options_c": "컨베이어",
+"options_d": "EFEM",
+"answer": "b",
+"explanation": "스토커(AS/RS)는 FOUP를 보관·버퍼링한다.",
+"category": "OHT기술",
+"difficulty": "1"
+},
+{
+"id": "9",
+"question": "반송 설비를 직접 제어하고 작업을 배정하는 시스템은?",
+"options_a": "MES",
+"options_b": "ERP",
+"options_c": "MCS",
+"options_d": "SCM",
+"answer": "c",
+"explanation": "MCS(Material Control System)가 반송차에 작업을 디스패칭한다.",
+"category": "MES연계",
+"difficulty": "2"
+},
+{
+"id": "10",
+"question": "생산 계획·실행·추적을 담당하는 상위 시스템은?",
+"options_a": "MES",
+"options_b": "MCS",
+"options_c": "OHT",
+"options_d": "PLC",
+"answer": "a",
+"explanation": "MES가 생산을 관리하고 MCS에 지시한다.",
+"category": "MES연계",
+"difficulty": "2"
+},
+{
+"id": "11",
+"question": "대기 작업을 어떤 차량에 배정할지 결정하는 것은?",
+"options_a": "경로탐색",
+"options_b": "디스패칭",
+"options_c": "계측",
+"options_d": "적재",
+"answer": "b",
+"explanation": "디스패칭은 작업-차량 배정 의사결정이다.",
+"category": "SW알고리즘",
+"difficulty": "2"
+},
+{
+"id": "12",
+"question": "A* 알고리즘의 평가 함수로 옳은 것은?",
+"options_a": "f = g - h",
+"options_b": "f = g + h",
+"options_c": "f = h / g",
+"options_d": "f = g * h",
+"answer": "b",
+"explanation": "A*는 f(n)=g(n)+h(n)으로 최단경로를 탐색한다.",
+"category": "SW알고리즘",
+"difficulty": "3"
+},
+{
+"id": "13",
+"question": "A*에서 h(n)이 의미하는 것은?",
+"options_a": "시작점까지 실제 비용",
+"options_b": "목표까지 추정 비용(휴리스틱)",
+"options_c": "총 노드 수",
+"options_d": "간선 가중치 합",
+"answer": "b",
+"explanation": "h(n)은 목표까지 남은 비용 추정치(휴리스틱)다.",
+"category": "SW알고리즘",
+"difficulty": "3"
+},
+{
+"id": "14",
+"question": "휴리스틱 없이 모든 인접 비용을 누적 비교하는 알고리즘은?",
+"options_a": "A*",
+"options_b": "다익스트라",
+"options_c": "BFS만",
+"options_d": "탐욕법",
+"answer": "b",
+"explanation": "다익스트라는 휴리스틱 없이 최단경로를 구한다.",
+"category": "SW알고리즘",
+"difficulty": "3"
+},
+{
+"id": "15",
+"question": "반송차와 장비 로드포트 간 핸드오프 신호를 규정한 SEMI 표준은?",
+"options_a": "E84",
+"options_b": "E10",
+"options_c": "E40",
+"options_d": "E90",
+"answer": "a",
+"explanation": "SEMI E84는 비접촉 핸드오프 인터페이스 표준이다.",
+"category": "MES연계",
+"difficulty": "3"
+},
+{
+"id": "16",
+"question": "FOUP 등 캐리어의 입출고·추적을 규정한 표준은?",
+"options_a": "E84",
+"options_b": "E87",
+"options_c": "E88",
+"options_d": "E10",
+"answer": "b",
+"explanation": "SEMI E87(CMS)은 캐리어 관리 표준이다.",
+"category": "MES연계",
+"difficulty": "3"
+},
+{
+"id": "17",
+"question": "자동 스토커의 동작·인터페이스를 규정한 표준은?",
+"options_a": "E87",
+"options_b": "E88",
+"options_c": "E84",
+"options_d": "E30",
+"answer": "b",
+"explanation": "SEMI E88은 스토커(AS/RS) 표준이다.",
+"category": "OHT기술",
+"difficulty": "3"
+},
+{
+"id": "18",
+"question": "설비 상태 분류와 가동률을 측정하는 RAM 표준은?",
+"options_a": "E10",
+"options_b": "E84",
+"options_c": "E87",
+"options_d": "E5",
+"answer": "a",
+"explanation": "SEMI E10은 신뢰성·가용성·유지보수성 지표 표준이다.",
+"category": "기타",
+"difficulty": "3"
+},
+{
+"id": "19",
+"question": "베이와 베이 사이를 잇는 반송 계층은?",
+"options_a": "인트라베이",
+"options_b": "인터베이",
+"options_c": "로드포트",
+"options_d": "챔버",
+"answer": "b",
+"explanation": "인터베이는 베이 간 반송 계층이다.",
+"category": "OHT기술",
+"difficulty": "2"
+},
+{
+"id": "20",
+"question": "하나의 베이 내부 장비 간을 잇는 반송 계층은?",
+"options_a": "인터베이",
+"options_b": "인트라베이",
+"options_c": "스토커",
+"options_d": "컨베이어",
+"answer": "b",
+"explanation": "인트라베이는 베이 내부 반송 계층이다.",
+"category": "OHT기술",
+"difficulty": "2"
+},
+{
+"id": "21",
+"question": "단위 시간당 완료한 반송/생산 작업 수를 뜻하는 지표는?",
+"options_a": "사이클타임",
+"options_b": "처리량(Throughput)",
+"options_c": "가동률",
+"options_d": "택타임",
+"answer": "b",
+"explanation": "처리량은 단위 시간당 완료 작업 수다.",
+"category": "스마트팩토리",
+"difficulty": "1"
+},
+{
+"id": "22",
+"question": "전체 흐름 속도를 제한하는 가장 느린 구간을 뜻하는 말은?",
+"options_a": "병목",
+"options_b": "버퍼",
+"options_c": "마진",
+"options_d": "리드타임",
+"answer": "a",
+"explanation": "병목(Bottleneck)이 전체 처리량을 제한한다.",
+"category": "스마트팩토리",
+"difficulty": "2"
+},
+{
+"id": "23",
+"question": "물리 설비를 가상으로 복제해 사전 검증하는 기술은?",
+"options_a": "디지털 트윈",
+"options_b": "블록체인",
+"options_c": "엣지컴퓨팅",
+"options_d": "RPA",
+"answer": "a",
+"explanation": "디지털 트윈은 가상 복제로 사전 분석한다.",
+"category": "스마트팩토리",
+"difficulty": "2"
+},
+{
+"id": "24",
+"question": "OHT 전동기기 상태를 실시간 모니터링하는 가상물리시스템은?",
+"options_a": "ERP",
+"options_b": "CPS",
+"options_c": "CRM",
+"options_d": "SCM",
+"answer": "b",
+"explanation": "CPS(Cyber-Physical System)가 물리-사이버를 결합한다.",
+"category": "스마트팩토리",
+"difficulty": "3"
+},
+{
+"id": "25",
+"question": "상태 데이터 기반으로 정비 시점을 결정하는 정비 방식은?",
+"options_a": "사후정비",
+"options_b": "예방정비(주기)",
+"options_c": "상태기반정비(CBM)",
+"options_d": "무정비",
+"answer": "c",
+"explanation": "CBM은 상태 데이터로 예지보전한다.",
+"category": "기타",
+"difficulty": "2"
+},
+{
+"id": "26",
+"question": "AMR이 이동하며 지도 작성과 위치추정을 동시에 하는 기법은?",
+"options_a": "GPS",
+"options_b": "SLAM",
+"options_c": "OCR",
+"options_d": "SLAM 불필요",
+"answer": "b",
+"explanation": "SLAM은 동시적 위치추정·지도작성 기법이다.",
+"category": "AMR기술",
+"difficulty": "3"
+},
+{
+"id": "27",
+"question": "AGV와 비교한 AMR의 가장 큰 장점은?",
+"options_a": "저렴한 센서",
+"options_b": "고정 경로 고수",
+"options_c": "동적 경로·유연성",
+"options_d": "무동력 주행",
+"answer": "c",
+"explanation": "AMR은 동적 경로로 유연하게 주행한다.",
+"category": "AMR기술",
+"difficulty": "2"
+},
+{
+"id": "28",
+"question": "SK하이닉스 IT(AMHS) 직무의 4대 업무가 아닌 것은?",
+"options_a": "구축",
+"options_b": "제어",
+"options_c": "SW개발",
+"options_d": "웨이퍼 식각",
+"answer": "d",
+"explanation": "JD상 4대 업무는 구축·제어·SW개발·운영이다.",
+"category": "기타",
+"difficulty": "1"
+},
+{
+"id": "29",
+"question": "AMHS 제어가 연계하는 상위 생산 시스템은?",
+"options_a": "MES",
+"options_b": "HRM",
+"options_c": "POS",
+"options_d": "CAD",
+"answer": "a",
+"explanation": "AMHS 제어는 MES와 연계해 반송을 제어한다.",
+"category": "MES연계",
+"difficulty": "2"
+},
+{
+"id": "30",
+"question": "신규 FAB 기획·설계 시 사전 검증에 활용되는 기법은?",
+"options_a": "수기 계산",
+"options_b": "Simulation",
+"options_c": "무작위 배치",
+"options_d": "경험적 추측",
+"answer": "b",
+"explanation": "JD상 Simulation 기반으로 신규 FAB을 기획·설계·구축한다.",
+"category": "SW알고리즘",
+"difficulty": "2"
+}
+],
+"glossary": [
+{
+"term_kr": "자동자재취급시스템",
+"term_en": "AMHS (Automated Material Handling System)",
+"definition": "FAB 내 자재를 자동 운반·보관·추적하는 통합 물류 시스템.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "천장반송차",
+"term_en": "OHT (Overhead Hoist Transport)",
+"definition": "천장 레일을 주행하며 FOUP를 승강·운반하는 반송차.",
+"category": "OHT기술"
+},
+{
+"term_kr": "자율이동로봇",
+"term_en": "AMR (Autonomous Mobile Robot)",
+"definition": "센서·SLAM 기반으로 자율 주행하는 이동 로봇.",
+"category": "AMR기술"
+},
+{
+"term_kr": "무인운반차",
+"term_en": "AGV (Automated Guided Vehicle)",
+"definition": "고정 경로를 따라 주행하는 무인 운반차.",
+"category": "AMR기술"
+},
+{
+"term_kr": "전공정통합용기",
+"term_en": "FOUP (Front Opening Unified Pod)",
+"definition": "300mm 웨이퍼 25매를 담는 밀폐 캐리어.",
+"category": "OHT기술"
+},
+{
+"term_kr": "장비전단모듈",
+"term_en": "EFEM (Equipment Front End Module)",
+"definition": "FOUP과 장비 내부를 잇는 웨이퍼 이송 전단 설비.",
+"category": "OHT기술"
+},
+{
+"term_kr": "로드포트",
+"term_en": "Load Port",
+"definition": "장비 전면에서 FOUP를 거치·도킹하는 인터페이스.",
+"category": "OHT기술"
+},
+{
+"term_kr": "스토커",
+"term_en": "Stocker (AS/RS)",
+"definition": "FOUP를 임시 보관·버퍼링하는 자동 창고.",
+"category": "OHT기술"
+},
+{
+"term_kr": "자재제어시스템",
+"term_en": "MCS (Material Control System)",
+"definition": "반송 설비를 제어하고 작업을 배정하는 시스템.",
+"category": "MES연계"
+},
+{
+"term_kr": "제조실행시스템",
+"term_en": "MES (Manufacturing Execution System)",
+"definition": "생산 계획·실행·추적을 담당하는 상위 시스템.",
+"category": "MES연계"
+},
+{
+"term_kr": "자재취급시스템",
+"term_en": "MHS (Material Handling System)",
+"definition": "자재 반송 설비 전반을 총칭.",
+"category": "MES연계"
+},
+{
+"term_kr": "디스패칭",
+"term_en": "Dispatching",
+"definition": "대기 작업을 차량에 배정하는 의사결정.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "경로탐색",
+"term_en": "Path Finding",
+"definition": "출발지~목적지 최단·최적 경로 계산.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "에이스타알고리즘",
+"term_en": "A* Algorithm",
+"definition": "f=g+h 기반 최단경로 탐색 알고리즘.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "다익스트라",
+"term_en": "Dijkstra",
+"definition": "가중 그래프 최단경로 알고리즘.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "휴리스틱",
+"term_en": "Heuristic",
+"definition": "목표까지 비용을 추정하는 함수.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "인터베이",
+"term_en": "Interbay",
+"definition": "베이와 베이 사이 상위 반송 계층.",
+"category": "OHT기술"
+},
+{
+"term_kr": "인트라베이",
+"term_en": "Intrabay",
+"definition": "베이 내부 장비 간 반송 계층.",
+"category": "OHT기술"
+},
+{
+"term_kr": "베이",
+"term_en": "Bay",
+"definition": "공정 장비가 모인 구역 단위.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "처리량",
+"term_en": "Throughput",
+"definition": "단위 시간당 완료 작업 수.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "사이클타임",
+"term_en": "Cycle Time",
+"definition": "작업 시작~완료 소요 시간.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "택타임",
+"term_en": "Takt Time",
+"definition": "수요 대비 한 단위 생산 허용 시간.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "병목",
+"term_en": "Bottleneck",
+"definition": "전체 흐름을 제한하는 최저속 구간.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "버퍼",
+"term_en": "Buffer",
+"definition": "흐름 변동을 흡수하는 임시 보관 용량.",
+"category": "OHT기술"
+},
+{
+"term_kr": "가동률",
+"term_en": "Availability",
+"definition": "설비가 실제 가동된 시간 비율.",
+"category": "기타"
+},
+{
+"term_kr": "신뢰성",
+"term_en": "Reliability",
+"definition": "설비가 고장 없이 기능하는 정도.",
+"category": "기타"
+},
+{
+"term_kr": "유지보수성",
+"term_en": "Maintainability",
+"definition": "정비·복구의 용이성.",
+"category": "기타"
+},
+{
+"term_kr": "가상물리시스템",
+"term_en": "CPS (Cyber-Physical System)",
+"definition": "물리 시스템과 SW를 결합한 시스템.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "디지털트윈",
+"term_en": "Digital Twin",
+"definition": "물리 설비를 가상 복제해 분석하는 기술.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "상태기반정비",
+"term_en": "CBM (Condition Based Maintenance)",
+"definition": "상태 데이터 기반 예지보전.",
+"category": "기타"
+},
+{
+"term_kr": "예지보전",
+"term_en": "Predictive Maintenance",
+"definition": "데이터로 고장을 예측해 사전 정비.",
+"category": "기타"
+},
+{
+"term_kr": "동시위치지도작성",
+"term_en": "SLAM (Simultaneous Localization and Mapping)",
+"definition": "주행 중 지도작성·위치추정 동시 수행.",
+"category": "AMR기술"
+},
+{
+"term_kr": "라이다",
+"term_en": "LiDAR",
+"definition": "레이저로 거리를 측정하는 센서.",
+"category": "AMR기술"
+},
+{
+"term_kr": "충돌회피",
+"term_en": "Collision Avoidance",
+"definition": "차량·장애물 간 충돌 방지 제어.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "스케줄링",
+"term_en": "Scheduling",
+"definition": "작업 순서·시점을 최적화하는 계획.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "우선순위",
+"term_en": "Priority",
+"definition": "긴급도에 따른 작업 처리 순서.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "가상계측",
+"term_en": "Virtual Metrology",
+"definition": "측정 없이 공정 결과를 예측하는 AI 기법.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "수율",
+"term_en": "Yield",
+"definition": "투입 대비 양품 비율.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "컨베이어",
+"term_en": "Conveyor",
+"definition": "연속 이송용 벨트/롤러 반송 설비.",
+"category": "OHT기술"
+},
+{
+"term_kr": "호이스트",
+"term_en": "Hoist",
+"definition": "FOUP를 수직 승강하는 장치.",
+"category": "OHT기술"
+},
+{
+"term_kr": "그리퍼",
+"term_en": "Gripper",
+"definition": "FOUP를 잡는 집게 기구.",
+"category": "OHT기술"
+},
+{
+"term_kr": "트랙",
+"term_en": "Track / Rail",
+"definition": "OHT가 주행하는 천장 레일.",
+"category": "OHT기술"
+},
+{
+"term_kr": "노드",
+"term_en": "Node",
+"definition": "경로 그래프의 지점(분기/정류).",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "간선",
+"term_en": "Edge",
+"definition": "노드 사이 연결과 이동 비용.",
+"category": "SW알고리즘"
+},
+{
+"term_kr": "스마트팩토리",
+"term_en": "Smart Factory",
+"definition": "데이터·자동화 기반 지능형 공장.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "디지털전환",
+"term_en": "DT (Digital Transformation)",
+"definition": "데이터·디지털 기술로 운영을 혁신.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "반도체팹",
+"term_en": "FAB (Fabrication Plant)",
+"definition": "반도체 전공정 제조 공장.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "클린룸",
+"term_en": "Cleanroom",
+"definition": "미세먼지를 제어한 청정 제조 공간.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "웨이퍼",
+"term_en": "Wafer",
+"definition": "반도체 소자를 만드는 실리콘 기판.",
+"category": "스마트팩토리"
+},
+{
+"term_kr": "캐리어",
+"term_en": "Carrier",
+"definition": "웨이퍼를 담아 운반하는 용기(FOUP 등).",
+"category": "OHT기술"
+},
+{
+"term_kr": "핸드오프",
+"term_en": "Handoff",
+"definition": "반송차-장비 간 적재/하역 이적재.",
+"category": "MES연계"
+},
+{
+"term_kr": "세미표준",
+"term_en": "SEMI Standards",
+"definition": "반도체 장비·자재 국제 표준 규격.",
+"category": "MES연계"
+},
+{
+"term_kr": "자동창고",
+"term_en": "AS/RS (Automated Storage and Retrieval System)",
+"definition": "자동 입출고 보관 설비(스토커).",
+"category": "OHT기술"
+},
+{
+"term_kr": "실시간위치추적",
+"term_en": "RTLS (Real-Time Location System)",
+"definition": "자재·차량 위치를 실시간 추적.",
+"category": "MES연계"
+},
+{
+"term_kr": "물리인공지능",
+"term_en": "Physical AI",
+"definition": "로봇·자율주행·제조 설비에 적용되는 AI.",
+"category": "AMR기술"
+}
+]
+};
+
+</script>
+  <script>
+/* =========================================================================
+ * data.js — 데이터 레이어
+ * Google Sheets(gviz CSV) → PapaParse 파싱 → 24h LocalStorage 캐시
+ * 실패/오프라인 시 window.FALLBACK_DATA (fallback-data.js)로 자동 대체
+ * ========================================================================= */
+window.DataLayer = (function () {
+  "use strict";
+  const CFG = window.APP_CONFIG;
+  const store = {};            // 메모리 캐시
+  let usedFallback = false;
+
+  function cacheKey(name) { return CFG.CACHE_PREFIX + name; }
+
+  function readCache(name) {
+    try {
+      const raw = localStorage.getItem(cacheKey(name));
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (Date.now() - obj.t > CFG.CACHE_TTL_MS) return null; // 만료
+      return obj.d;
+    } catch (e) { return null; }
+  }
+  function writeCache(name, data) {
+    try { localStorage.setItem(cacheKey(name), JSON.stringify({ t: Date.now(), d: data })); }
+    catch (e) { /* 용량 초과 등 무시 */ }
+  }
+
+  // CSV 텍스트 → 객체 배열 (PapaParse, 빈 셀/특수문자 안전 처리)
+  function parseCSV(text) {
+    const res = Papa.parse(text, {
+      header: true,
+      skipEmptyLines: "greedy",
+      transformHeader: (h) => h.trim(),
+    });
+    // 모든 값이 빈 행 제거
+    return (res.data || []).filter((row) =>
+      Object.values(row).some((v) => v != null && String(v).trim() !== "")
+    );
+  }
+
+  function fromFallback(name) {
+    usedFallback = true;
+    const fb = window.FALLBACK_DATA || {};
+    const map = { articles: "articles", concepts: "concepts", quiz: "quiz_bank", glossary: "glossary" };
+    return (fb[map[name]] || []).slice();
+  }
+
+  // 단일 시트 로드: 캐시 → 네트워크 → 폴백
+  async function loadSheet(name) {
+    if (store[name]) return store[name];
+
+    const cached = readCache(name);
+    if (cached) { store[name] = cached; return cached; }
+
+    const url = CFG.SHEETS[name];
+    if (url) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 8000);
+        const resp = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const text = await resp.text();
+        const rows = parseCSV(text);
+        if (!rows.length) throw new Error("empty sheet");
+        store[name] = rows;
+        writeCache(name, rows);
+        return rows;
+      } catch (e) {
+        console.warn(`[data] '${name}' Sheets fetch 실패 → 폴백 사용:`, e.message);
+      }
+    }
+    const fb = fromFallback(name);
+    store[name] = fb;
+    return fb;
+  }
+
+  async function loadAll() {
+    const names = ["articles", "concepts", "quiz", "glossary"];
+    const results = await Promise.all(names.map(loadSheet));
+    return {
+      articles: results[0],
+      concepts: results[1],
+      quiz: results[2],
+      glossary: results[3],
+      usedFallback,
+    };
+  }
+
+  function clearCache() {
+    Object.keys(CFG.SHEETS).forEach((n) => localStorage.removeItem(cacheKey(n)));
+  }
+
+  return { loadSheet, loadAll, clearCache, get usedFallback() { return usedFallback; } };
+})();
+
+</script>
+  <script>
+/* =========================================================================
+ * study.js — Tab 1: AMHS Study
+ * 학습 카드(검색/필터) · 개념 사전 · 퀴즈 · 플래시카드
+ * ========================================================================= */
+window.StudyTab = (function () {
+  "use strict";
+  const CFG = window.APP_CONFIG;
+  let DATA = { articles: [], concepts: [], quiz: [], glossary: [] };
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const catColor = (c) => CFG.CATEGORY_COLORS[c] || CFG.CATEGORY_COLORS["기타"];
+
+  let articleFilter = "전체", articleSearch = "";
+
+  /* ---------- 학습 카드 ---------- */
+  function renderCards() {
+    const wrap = $("#cards-grid");
+    let list = DATA.articles;
+    if (articleFilter !== "전체") list = list.filter((a) => a.category === articleFilter);
+    if (articleSearch.trim()) {
+      const q = articleSearch.toLowerCase();
+      list = list.filter((a) =>
+        (a.title + a.summary + (a.key_sentence || "")).toLowerCase().includes(q));
+    }
+    if (!list.length) { wrap.innerHTML = `<div class="empty">검색 결과가 없습니다.</div>`; return; }
+    wrap.innerHTML = list.map((a) => `
+      <div class="card" data-id="${esc(a.id)}">
+        <span class="cat-badge" style="background:${catColor(a.category)}">${esc(a.category)}</span>
+        <h3>${esc(a.title)}</h3>
+        <div class="meta">${esc(a.date || "")}</div>
+        <div class="excerpt">${esc((a.summary || "").slice(0, 80))}${(a.summary||"").length>80?"…":""}</div>
+      </div>`).join("");
+    $$("#cards-grid .card").forEach((el) =>
+      el.addEventListener("click", () => openArticle(el.dataset.id)));
+  }
+
+  function openArticle(id) {
+    const a = DATA.articles.find((x) => String(x.id) === String(id));
+    if (!a) return;
+    $("#modal-body").innerHTML = `
+      <button class="close-x" aria-label="닫기">&times;</button>
+      <span class="cat-badge" style="background:${catColor(a.category)}">${esc(a.category)}</span>
+      <h2>${esc(a.title)}</h2>
+      <div class="meta" style="color:var(--text-soft);font-size:12px">${esc(a.date || "")}</div>
+      <p style="margin:12px 0;font-size:14px">${esc(a.summary)}</p>
+      ${a.key_sentence ? `<div class="key-sentence">“${esc(a.key_sentence)}”</div>` : ""}
+      ${a.quiz_q ? `<div class="quiz-inline"><strong>🧠 확인 퀴즈</strong><br>${esc(a.quiz_q)}
+        <details style="margin-top:6px"><summary style="cursor:pointer;color:var(--orange)">정답 보기</summary>
+        <div style="margin-top:6px">${esc(a.quiz_a)}</div></details></div>` : ""}
+      ${a.url ? `<div style="margin-top:16px"><a class="btn" href="${esc(a.url)}" target="_blank" rel="noopener">원문/출처 열기 ↗</a></div>` : ""}
+    `;
+    const overlay = $("#modal-overlay");
+    overlay.classList.add("open");
+    $("#modal-body .close-x").addEventListener("click", () => overlay.classList.remove("open"));
+  }
+
+  function renderFilters() {
+    const chips = ["전체", ...CFG.CATEGORIES];
+    $("#card-filters").innerHTML = chips.map((c) => {
+      const active = c === articleFilter;
+      const bg = c === "전체" ? CFG.BRAND.navy : catColor(c);
+      return `<button class="chip ${active ? "active" : ""}" data-cat="${esc(c)}"
+        style="${active ? `background:${bg};` : ""}">${esc(c)}</button>`;
+    }).join("");
+    $$("#card-filters .chip").forEach((ch) => ch.addEventListener("click", () => {
+      articleFilter = ch.dataset.cat; renderFilters(); renderCards();
+    }));
+  }
+
+  /* ---------- 개념 사전 ---------- */
+  let conceptDiff = "전체";
+  function renderConcepts() {
+    const wrap = $("#concept-grid");
+    let list = DATA.concepts;
+    if (conceptDiff !== "전체") list = list.filter((c) => String(c.difficulty) === conceptDiff);
+    const lvl = { "1": "기초", "2": "중급", "3": "심화" };
+    wrap.innerHTML = list.map((c) => `
+      <div class="card" data-term="${esc(c.term)}">
+        <span class="cat-badge" style="background:${catColor(c.category)}">${esc(c.category)}</span>
+        <h3>${esc(c.term)} <small style="color:var(--text-soft);font-weight:400">· ${lvl[c.difficulty]||""}</small></h3>
+        <div class="excerpt">${esc((c.definition||"").slice(0,70))}…</div>
+      </div>`).join("");
+    $$("#concept-grid .card").forEach((el) => el.addEventListener("click", () => {
+      const c = DATA.concepts.find((x) => x.term === el.dataset.term);
+      $("#modal-body").innerHTML = `
+        <button class="close-x">&times;</button>
+        <span class="cat-badge" style="background:${catColor(c.category)}">${esc(c.category)}</span>
+        <h2>${esc(c.term)}</h2>
+        <p style="margin:10px 0;font-size:14px">${esc(c.definition)}</p>
+        <div class="key-sentence"><strong>적용 예시</strong><br>${esc(c.example)}</div>
+        ${c.related_terms ? `<div style="margin-top:10px;font-size:13px;color:var(--text-soft)">관련: ${esc((c.related_terms||"").split(";").join(", "))}</div>` : ""}`;
+      const o = $("#modal-overlay"); o.classList.add("open");
+      $("#modal-body .close-x").addEventListener("click", () => o.classList.remove("open"));
+    }));
+  }
+  function renderConceptFilters() {
+    const opts = [["전체","전체"],["1","기초"],["2","중급"],["3","심화"]];
+    $("#concept-filters").innerHTML = opts.map(([v,l]) =>
+      `<button class="chip ${v===conceptDiff?"active":""}" data-d="${v}"
+        style="${v===conceptDiff?`background:${CFG.BRAND.navy};`:""}">${l}</button>`).join("");
+    $$("#concept-filters .chip").forEach((ch)=>ch.addEventListener("click",()=>{
+      conceptDiff = ch.dataset.d; renderConceptFilters(); renderConcepts();
+    }));
+  }
+
+  /* ---------- 퀴즈 ---------- */
+  let quizPool = [], qIndex = 0, qScore = 0, qAnswered = false, sessionLog = [];
+  function shuffle(a) { const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[r[i],r[j]]=[r[j],r[i]];} return r; }
+
+  function startQuiz() {
+    quizPool = shuffle(DATA.quiz).slice(0, Math.min(10, DATA.quiz.length));
+    qIndex = 0; qScore = 0; sessionLog = [];
+    renderQuiz();
+  }
+  function renderQuiz() {
+    const box = $("#quiz-area");
+    if (qIndex >= quizPool.length) { return finishQuiz(); }
+    const q = quizPool[qIndex]; qAnswered = false;
+    const opts = [["a",q.options_a],["b",q.options_b],["c",q.options_c],["d",q.options_d]];
+    box.innerHTML = `
+      <div class="quiz-card">
+        <div class="quiz-progress">문제 ${qIndex+1} / ${quizPool.length} · 카테고리: ${esc(q.category)}</div>
+        <div class="quiz-q">${esc(q.question)}</div>
+        <div class="quiz-options">
+          ${opts.map(([k,v])=>`<button class="quiz-opt" data-k="${k}">${esc(v)}</button>`).join("")}
+        </div>
+        <div class="quiz-explain" id="quiz-explain"></div>
+        <div style="margin-top:16px;text-align:right">
+          <button class="btn" id="quiz-next" style="display:none">다음 →</button>
+        </div>
+      </div>`;
+    $$("#quiz-area .quiz-opt").forEach((b)=>b.addEventListener("click",()=>answerQuiz(b,q)));
+    $("#quiz-next").addEventListener("click",()=>{ qIndex++; renderQuiz(); });
+  }
+  function answerQuiz(btn, q) {
+    if (qAnswered) return; qAnswered = true;
+    const chosen = btn.dataset.k, correct = (q.answer||"").trim().toLowerCase();
+    $$("#quiz-area .quiz-opt").forEach((b)=>{
+      b.disabled = true;
+      if (b.dataset.k === correct) b.classList.add("correct");
+      else if (b.dataset.k === chosen) b.classList.add("wrong");
+    });
+    const ok = chosen === correct; if (ok) qScore++;
+    sessionLog.push({ category: q.category, correct: ok });
+    const ex = $("#quiz-explain");
+    ex.innerHTML = `${ok?"✅ 정답!":"❌ 오답"} <strong>해설:</strong> ${esc(q.explanation)}`;
+    ex.classList.add("show");
+    $("#quiz-next").style.display = "inline-block";
+    $("#quiz-next").textContent = qIndex+1>=quizPool.length ? "결과 보기 →" : "다음 →";
+  }
+  function finishQuiz() {
+    // 히스토리 저장
+    const hist = loadQuizHistory();
+    hist.push({ date: new Date().toISOString().slice(0,10), score: qScore, total: quizPool.length, log: sessionLog });
+    try { localStorage.setItem(CFG.QUIZ_STORAGE_KEY, JSON.stringify(hist.slice(-50))); } catch(e){}
+    $("#quiz-area").innerHTML = `
+      <div class="quiz-card" style="text-align:center">
+        <h2 style="font-size:22px">${qScore} / ${quizPool.length} 정답</h2>
+        <p style="color:var(--text-soft);margin:8px 0 18px">정답률 ${Math.round(qScore/quizPool.length*100)}%</p>
+        <canvas id="weakChart" height="220"></canvas>
+        <div style="margin-top:18px"><button class="btn orange" id="quiz-retry">다시 풀기</button></div>
+      </div>`;
+    $("#quiz-retry").addEventListener("click", startQuiz);
+    drawWeaknessChart();
+    renderQuizStats();
+  }
+  function loadQuizHistory() {
+    try { return JSON.parse(localStorage.getItem(CFG.QUIZ_STORAGE_KEY) || "[]"); } catch(e){ return []; }
+  }
+  function renderQuizStats() {
+    const hist = loadQuizHistory();
+    const plays = hist.length;
+    const best = hist.reduce((m,h)=>Math.max(m, h.total?h.score/h.total:0),0);
+    const avg = plays ? hist.reduce((s,h)=>s+(h.total?h.score/h.total:0),0)/plays : 0;
+    $("#quiz-stats").innerHTML = `
+      <div class="stat-pill"><div class="num">${plays}</div><div class="lbl">총 응시</div></div>
+      <div class="stat-pill"><div class="num">${Math.round(best*100)}%</div><div class="lbl">최고 정답률</div></div>
+      <div class="stat-pill"><div class="num">${Math.round(avg*100)}%</div><div class="lbl">평균 정답률</div></div>`;
+  }
+  let weakChart;
+  function drawWeaknessChart() {
+    const hist = loadQuizHistory();
+    const agg = {}; // {cat:{c, t}}
+    hist.forEach((h)=> (h.log||[]).forEach((e)=>{
+      agg[e.category] = agg[e.category] || { c:0, t:0 };
+      agg[e.category].t++; if (e.correct) agg[e.category].c++;
+    }));
+    const cats = Object.keys(agg);
+    if (!cats.length || !window.Chart) return;
+    const rates = cats.map((c)=> Math.round(agg[c].c/agg[c].t*100));
+    const ctx = document.getElementById("weakChart"); if (!ctx) return;
+    if (weakChart) weakChart.destroy();
+    weakChart = new Chart(ctx, {
+      type: "bar",
+      data: { labels: cats, datasets: [{ label: "카테고리별 정답률(%)",
+        data: rates, backgroundColor: cats.map((c)=>catColor(c)) }] },
+      options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } },
+        plugins: { legend: { display: false }, title: { display: true, text: "취약 분야 분석" } } }
+    });
+  }
+
+  /* ---------- 플래시카드 ---------- */
+  let flashPool = [], fIndex = 0;
+  function loadFlashProgress() { try { return JSON.parse(localStorage.getItem(CFG.FLASHCARD_STORAGE_KEY)||"{}"); } catch(e){ return {}; } }
+  function saveFlashProgress(p) { try { localStorage.setItem(CFG.FLASHCARD_STORAGE_KEY, JSON.stringify(p)); } catch(e){} }
+  function startFlash() { flashPool = shuffle(DATA.glossary); fIndex = 0; renderFlash(); }
+  function renderFlash() {
+    const wrap = $("#flash-area");
+    if (!flashPool.length) { wrap.innerHTML = `<div class="empty">용어 데이터가 없습니다.</div>`; return; }
+    if (fIndex >= flashPool.length) {
+      wrap.innerHTML = `<div class="quiz-card" style="text-align:center"><h2>학습 완료! 🎉</h2>
+        <p style="color:var(--text-soft);margin:10px 0">${flashPool.length}개 용어를 모두 확인했습니다.</p>
+        <button class="btn orange" id="flash-restart">다시 시작</button></div>`;
+      $("#flash-restart").addEventListener("click", startFlash); return;
+    }
+    const g = flashPool[fIndex];
+    wrap.innerHTML = `
+      <div class="flash-wrap">
+        <div class="quiz-progress" style="text-align:center;margin-bottom:10px">${fIndex+1} / ${flashPool.length}</div>
+        <div class="flashcard" id="flashcard">
+          <div class="flash-inner">
+            <div class="flash-face flash-front"><div style="font-size:12px;opacity:.8">한국어</div><h2>${esc(g.term_kr)}</h2><div style="font-size:11px;opacity:.7">탭하여 뒤집기</div></div>
+            <div class="flash-face flash-back">
+              <div class="en">${esc(g.term_en)}</div>
+              <div class="def">${esc(g.definition)}</div>
+              <span class="cat-badge" style="background:${catColor(g.category)}">${esc(g.category)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="flash-controls">
+          <button class="btn secondary" id="flash-again">🔁 다시 볼게요</button>
+          <button class="btn orange" id="flash-known">✅ 알았어요</button>
+        </div>
+      </div>`;
+    $("#flashcard").addEventListener("click", (e)=> e.currentTarget.classList.toggle("flipped"));
+    const prog = loadFlashProgress();
+    $("#flash-known").addEventListener("click", ()=>{ prog[g.term_kr]="known"; saveFlashProgress(prog); fIndex++; renderFlash(); });
+    $("#flash-again").addEventListener("click", ()=>{ prog[g.term_kr]="review"; saveFlashProgress(prog); fIndex++; renderFlash(); });
+  }
+
+  /* ---------- 서브탭 전환 ---------- */
+  function initSubtabs() {
+    $$("#study-subtabs button").forEach((b)=>b.addEventListener("click",()=>{
+      $$("#study-subtabs button").forEach((x)=>x.classList.remove("active"));
+      b.classList.add("active");
+      $$("#tab-study .subview").forEach((v)=>v.classList.remove("active"));
+      $("#sv-"+b.dataset.sv).classList.add("active");
+      if (b.dataset.sv==="quiz"){ renderQuizStats(); if(!quizPool.length) startQuiz(); }
+      if (b.dataset.sv==="flash" && !flashPool.length) startFlash();
+    }));
+  }
+
+  function init(data) {
+    DATA = data;
+    renderFilters(); renderCards();
+    renderConceptFilters(); renderConcepts();
+    renderQuizStats();
+    initSubtabs();
+    $("#card-search").addEventListener("input", (e)=>{ articleSearch = e.target.value; renderCards(); });
+    $("#modal-overlay").addEventListener("click",(e)=>{ if(e.target.id==="modal-overlay") e.target.classList.remove("open"); });
+  }
+  return { init };
+})();
+
+</script>
+  <script>
+/* =========================================================================
+ * simulation.js — Tab 2: Control 실습 (3D)
+ * Three.js r128 · FAB 레이아웃(20x15) · OHT 비히클 · A* 경로탐색
+ * OrbitControls 미사용 → 마우스 드래그/휠 카메라 직접 구현
+ * ========================================================================= */
+
+/* ---------- A* 경로탐색 (트랙 노드 그래프) ---------- */
+class AStarPathfinder {
+  constructor(nodes, edges) {
+    this.nodes = nodes;            // { id: {x, z} }
+    this.adj = edges;              // { id: [neighborId, ...] }
+  }
+  _h(a, b) { // 유클리드 휴리스틱
+    const p = this.nodes[a], q = this.nodes[b];
+    return Math.hypot(p.x - q.x, p.z - q.z);
+  }
+  findPath(start, goal) {
+    if (start == null || goal == null) return [];
+    if (start === goal) return [start];            // 엣지케이스: 시작=목적지
+    if (!this.nodes[start] || !this.nodes[goal]) return [];
+    const open = new Set([start]);
+    const came = {};
+    const g = { [start]: 0 };
+    const f = { [start]: this._h(start, goal) };
+    while (open.size) {
+      let cur = null, best = Infinity;
+      open.forEach((n) => { if ((f[n] ?? Infinity) < best) { best = f[n]; cur = n; } });
+      if (cur === goal) {            // 경로 복원
+        const path = [cur];
+        while (came[cur] != null) { cur = came[cur]; path.unshift(cur); }
+        return path;
+      }
+      open.delete(cur);
+      (this.adj[cur] || []).forEach((nb) => {
+        const tentative = (g[cur] ?? Infinity) + this._h(cur, nb);
+        if (tentative < (g[nb] ?? Infinity)) {
+          came[nb] = cur; g[nb] = tentative;
+          f[nb] = tentative + this._h(nb, goal);
+          open.add(nb);
+        }
+      });
+    }
+    return [];                       // 엣지케이스: 경로 없음
+  }
+}
+
+window.AMHSSimulation = (function () {
+  "use strict";
+  let scene, camera, renderer, raf = null, mounted = false;
+  let pathfinder, trackNodes = {}, trackAdj = {};
+  let oht, ohtState = "idle", ohtPath = [], ohtSeg = 0, ohtT = 0, foup = null, carrying = false;
+  let speed = 1.5, throughput = 0;
+  const stations = [];     // 클릭 가능한 목적지(노드 id 보유)
+  const railY = 4.5;
+  let theta = 0.9, phi = 0.9, radius = 26, target = new THREE.Vector3(0, 0, 0);
+  let dragging = false, lastX = 0, lastY = 0;
+  let webglOK = true;
+
+  function buildTrackGraph() {
+    // 격자형 천장 트랙: 가로 라인(인터베이) + 세로 라인(인트라베이)
+    trackNodes = {}; trackAdj = {};
+    const cols = [-8, -4, 0, 4, 8], rows = [-5, -1, 3];
+    cols.forEach((x) => rows.forEach((z) => {
+      const id = `${x}_${z}`; trackNodes[id] = { x, z }; trackAdj[id] = [];
+    }));
+    rows.forEach((z) => { for (let i = 0; i < cols.length - 1; i++) {
+      const a = `${cols[i]}_${z}`, b = `${cols[i+1]}_${z}`;
+      trackAdj[a].push(b); trackAdj[b].push(a);
+    }});
+    cols.forEach((x) => { for (let i = 0; i < rows.length - 1; i++) {
+      const a = `${x}_${rows[i]}`, b = `${x}_${rows[i+1]}`;
+      trackAdj[a].push(b); trackAdj[b].push(a);
+    }});
+    pathfinder = new AStarPathfinder(trackNodes, trackAdj);
+    return { cols, rows };
+  }
+
+  function addRail(a, b) {
+    const p = trackNodes[a], q = trackNodes[b];
+    const dx = q.x - p.x, dz = q.z - p.z;
+    const len = Math.hypot(dx, dz);
+    const geo = new THREE.CylinderGeometry(0.05, 0.05, len, 8);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set((p.x + q.x) / 2, railY, (p.z + q.z) / 2);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(dx, 0, dz).normalize());
+    scene.add(m);
+  }
+
+  function buildScene() {
+    buildTrackGraph();
+    const gridHelper = new THREE.GridHelper(24, 24, 0x335577, 0x223344);
+    gridHelper.position.y = 0; scene.add(gridHelper);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 18),
+      new THREE.MeshStandardMaterial({ color: 0x0d1526 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -0.01; scene.add(floor);
+
+    const seen = new Set();
+    Object.keys(trackAdj).forEach((a) => trackAdj[a].forEach((b) => {
+      const key = [a, b].sort().join("|"); if (seen.has(key)) return; seen.add(key); addRail(a, b);
+    }));
+    Object.keys(trackNodes).forEach((id) => {
+      const n = trackNodes[id];
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x5B9BD5 }));
+      dot.position.set(n.x, railY, n.z); scene.add(dot);
+    });
+
+    Object.keys(trackNodes).forEach((id, i) => {
+      const n = trackNodes[id];
+      const st = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1.5),
+        new THREE.MeshStandardMaterial({ color: 0x888888 }));
+      st.position.set(n.x, 1, n.z);
+      st.userData = { nodeId: id, kind: "station", idx: i };
+      scene.add(st); stations.push(st);
+      const lp = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x5B9BD5 }));
+      lp.position.set(n.x, 2.0, n.z + 0.8); scene.add(lp);
+    });
+
+    [[-10, -5], [10, 3]].forEach(([x, z]) => {
+      const stk = new THREE.Mesh(new THREE.BoxGeometry(2.5, 4, 2.5),
+        new THREE.MeshStandardMaterial({ color: 0x1A73E8 }));
+      stk.position.set(x, 2, z); scene.add(stk);
+    });
+
+    stations.slice(0, 6).forEach((st) => {
+      const f = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.3),
+        new THREE.MeshStandardMaterial({ color: 0xF5F5F5 }));
+      f.position.set(st.position.x, 2.2, st.position.z + 0.8); scene.add(f);
+    });
+
+    oht = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0xFF6B00 }));
+    const gripper = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8),
+      new THREE.MeshStandardMaterial({ color: 0x333333 }));
+    gripper.position.y = -0.45; gripper.name = "gripper";
+    oht.add(body); oht.add(gripper);
+    const startNode = Object.keys(trackNodes)[0];
+    oht.position.set(trackNodes[startNode].x, railY, trackNodes[startNode].z);
+    oht.userData.node = startNode;
+    foup = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.28),
+      new THREE.MeshStandardMaterial({ color: 0xF5F5F5 }));
+    foup.visible = false; oht.add(foup);
+    scene.add(oht);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    dir.position.set(10, 20, 10); scene.add(dir);
+  }
+
+  function dispatch(destNodeId) {
+    const from = oht.userData.node;
+    const path = pathfinder.findPath(from, destNodeId);
+    if (!path.length) { setStatus("err"); return; }
+    if (path.length === 1) { setStatus("idle"); return; } // 이미 목적지
+    ohtPath = path; ohtSeg = 0; ohtT = 0; setStatus("move");
+    carrying = true; foup.visible = true; foup.position.set(0, -0.5, 0);
+  }
+
+  function setStatus(s) {
+    ohtState = s;
+    const dot = { idle: "status-idle", move: "status-move", err: "status-err" }[s];
+    const label = { idle: "대기", move: "이동 중", err: "오류(경로 없음)" }[s];
+    const el = document.getElementById("sim-status");
+    if (el) el.innerHTML = `<span class="status-dot ${dot}"></span>${label}`;
+    const el2 = document.getElementById("sim-status2");
+    if (el2) el2.innerHTML = `<span class="status-dot ${dot}"></span>${label}`;
+    const body = oht && oht.children[0];
+    if (body) body.material.color.set(s === "move" ? 0xFF6B00 : s === "err" ? 0xe85b5b : 0x34c77b);
+  }
+
+  function updateVehicle(dt) {
+    if (ohtState !== "move" || ohtSeg >= ohtPath.length - 1) {
+      if (ohtState === "move") {
+        setStatus("idle"); throughput++; carrying = false; foup.visible = false;
+        const tp = document.getElementById("throughput-val"); if (tp) tp.textContent = throughput;
+      }
+      return;
+    }
+    const a = trackNodes[ohtPath[ohtSeg]], b = trackNodes[ohtPath[ohtSeg + 1]];
+    const segLen = Math.hypot(b.x - a.x, b.z - a.z);
+    ohtT += (speed * dt) / Math.max(segLen, 0.001);
+    if (ohtT >= 1) { ohtT = 0; ohtSeg++; oht.userData.node = ohtPath[ohtSeg]; }
+    const t = Math.min(ohtT, 1);
+    oht.position.set(a.x + (b.x - a.x) * t, railY, a.z + (b.z - a.z) * t);
+  }
+
+  /* ---------- 수동 카메라 ---------- */
+  function updateCamera() {
+    camera.position.x = target.x + radius * Math.sin(phi) * Math.cos(theta);
+    camera.position.y = target.y + radius * Math.cos(phi);
+    camera.position.z = target.z + radius * Math.sin(phi) * Math.sin(theta);
+    camera.lookAt(target);
+  }
+  function bindControls(canvas) {
+    canvas.addEventListener("mousedown", (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+    window.addEventListener("mouseup", () => dragging = false);
+    window.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      theta += (e.clientX - lastX) * 0.01;
+      phi = Math.max(0.2, Math.min(Math.PI / 2.05, phi + (e.clientY - lastY) * 0.01));
+      lastX = e.clientX; lastY = e.clientY; updateCamera();
+    });
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault(); radius = Math.max(8, Math.min(50, radius + e.deltaY * 0.02)); updateCamera();
+    }, { passive: false });
+    canvas.addEventListener("touchstart", (e) => { dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }, { passive: true });
+    canvas.addEventListener("touchmove", (e) => {
+      if (!dragging) return; const t = e.touches[0];
+      theta += (t.clientX - lastX) * 0.01;
+      phi = Math.max(0.2, Math.min(Math.PI / 2.05, phi + (t.clientY - lastY) * 0.01));
+      lastX = t.clientX; lastY = t.clientY; updateCamera();
+    }, { passive: true });
+    canvas.addEventListener("touchend", () => dragging = false);
+    canvas.addEventListener("click", onPick);
+  }
+  const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+  function onPick(e) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    ray.setFromCamera(mouse, camera);
+    const hits = ray.intersectObjects(stations, false);
+    if (hits.length) {
+      const node = hits[0].object.userData.nodeId;
+      dispatch(node);
+      const el = document.getElementById("sim-dest"); if (el) el.textContent = "목적지: " + node;
+    }
+  }
+
+  let lastTime = 0;
+  function animate(now) {
+    raf = requestAnimationFrame(animate);
+    const dt = Math.min((now - lastTime) / 1000 || 0, 0.05); lastTime = now;
+    updateVehicle(dt);
+    renderer.render(scene, camera);
+  }
+
+  function resize() {
+    const wrap = document.getElementById("sim-canvas-wrap"); if (!wrap || !renderer) return;
+    const w = wrap.clientWidth, h = wrap.clientHeight || 420;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+
+  function mount() {
+    if (mounted) { resize(); return; }
+    const wrap = document.getElementById("sim-canvas-wrap");
+    try {
+      const test = document.createElement("canvas");
+      webglOK = !!(window.WebGLRenderingContext && (test.getContext("webgl") || test.getContext("experimental-webgl")));
+    } catch (e) { webglOK = false; }
+    if (!webglOK || !window.THREE) {
+      wrap.innerHTML = `<div class="sim-fallback">⚠️ 이 브라우저는 WebGL 3D를 지원하지 않습니다.<br>
+        간략 모드: A* 경로탐색은 정상 동작하며, 데스크톱 Chrome에서 3D를 확인하세요.</div>`;
+      return;
+    }
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a1120);
+    camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 1000);
+    const canvas = document.getElementById("sim-canvas");
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    buildScene(); bindControls(canvas); updateCamera(); resize();
+    setStatus("idle");
+    window.addEventListener("resize", resize);
+    lastTime = performance.now(); animate(lastTime);
+    mounted = true;
+  }
+
+  function setSceneBg() { if (scene) scene.background = new THREE.Color(0x0a1120); }
+  function pause() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+  function resume() { if (mounted && !raf) { lastTime = performance.now(); animate(lastTime); } }
+  function dispose() { pause(); if (renderer) { renderer.dispose(); } mounted = false; }
+
+  let panelBound = false;
+  function bindPanel() {
+    if (panelBound) return;          // 탭 재진입 시 중복 바인딩 방지
+    panelBound = true;
+    const sp = document.getElementById("speed-slider");
+    if (sp) sp.addEventListener("input", (e) => {
+      speed = parseFloat(e.target.value);
+      const lbl = document.getElementById("speed-val"); if (lbl) lbl.textContent = speed.toFixed(1) + " m/s";
+    });
+    const reset = document.getElementById("sim-reset");
+    if (reset) reset.addEventListener("click", () => {
+      throughput = 0; const tp = document.getElementById("throughput-val"); if (tp) tp.textContent = 0;
+      const startNode = Object.keys(trackNodes)[0];
+      if (oht) { oht.position.set(trackNodes[startNode].x, railY, trackNodes[startNode].z); oht.userData.node = startNode; }
+      setStatus("idle");
+    });
+  }
+
+  return { mount, pause, resume, dispose, bindPanel, _AStar: AStarPathfinder, setSceneBg };
+})();
+
+</script>
+  <script>
+/* =========================================================================
+ * devlog.js — Tab 3: 개발 과정 기록
+ * 타임라인 · Claude 도구 갤러리 · 데이터 대시보드(도넛) · Self-feedback
+ * dev_log는 Sheets에 없을 수 있어 내장 기록을 기본으로 사용
+ * ========================================================================= */
+window.DevLogTab = (function () {
+  "use strict";
+  const CFG = window.APP_CONFIG;
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  let donut;
+
+  // 내장 dev_log (Sheets dev_log 탭 동기화 가능)
+  const LOG = [
+    { date: "2026-06-22", phase: "Phase 0", tool: "Cowork", action: "프로젝트 총괄 착수 · 5개 시트 구조 정의", result: "STEP 1 구조 확정", feedback: "스키마를 config와 1:1로 맞춰 fetch 매칭 보장" },
+    { date: "2026-06-22", phase: "Phase 1", tool: "Chrome", action: "SK하이닉스 뉴스룸 6개 검색어 크롤링", result: "OHT·스마트팩토리·Physical AI 등 실기사 확보", feedback: "AMHS 직접 매칭 적어 SEMI 기술 레퍼런스로 보완" },
+    { date: "2026-06-22", phase: "Phase 2", tool: "Cowork", action: "데이터 정제 · 카테고리 6분류 표준화", result: "articles25·concepts30·quiz30·glossary55", feedback: "공식 JD 4대 업무를 데이터에 반영" },
+    { date: "2026-06-22", phase: "Phase 3", tool: "Code", action: "정적 웹앱 7파일 개발(HTML/CSS/JS/Three.js)", result: "3탭 통합 · A* 직접 구현", feedback: "Sheets 미설정에도 동작하도록 폴백 데이터 내장" },
+    { date: "2026-06-22", phase: "Phase 4", tool: "Cowork", action: "하네스 9항목 자동 검증 + Self-feedback 채점", result: "엣지케이스/오프라인/반응형 점검", feedback: "탭 전환 시 렌더 루프 pause로 메모리 절약" },
+    { date: "2026-06-22", phase: "Phase 5", tool: "Code", action: "README · 상대경로 · GitHub Pages 배포 준비", result: "배포 체크리스트 완성", feedback: "CDN·상대경로로 서버리스 배포 보장" },
+  ];
+
+  const FEEDBACK = [
+    { q: "왜 만들었나?", a: "SK하이닉스 IT(AMHS) 직무의 4대 업무(구축·제어·SW개발·운영)를 실제로 학습·체험하고, AI 도구를 단순 사용이 아닌 '데이터 수집→개발→검증→배포' 전 사이클 자동화에 활용했음을 증명하기 위해." },
+    { q: "어떻게 만들었나?", a: "Cowork(총괄·자가평가) · Chrome(뉴스룸 크롤링) · Code(Three.js 3D·A* 알고리즘)를 역할 분담해 서버 없는 정적 웹앱으로 구현. 데이터는 Google Sheets로 분리해 무중단 갱신." },
+    { q: "무엇을 배웠나?", a: "AMHS의 OHT/AMR/MES 연계 구조와 디스패칭·경로탐색 알고리즘을 직접 코드로 구현하며 체득. 비전 AI 캡스톤 경험이 AMHS 센서-제어 연계 업무로 직결됨을 확인." },
+    { q: "개선 루프", a: "1차: 3D가 모바일에서 무거움 → 탭 비활성 시 렌더 중지. 2차: Sheets 미설정 시 빈 화면 → 폴백 데이터 내장. 3차: A* 시작=목적지/경로없음 엣지케이스 → 분기 처리." },
+  ];
+
+  function renderTimeline(rows) {
+    const data = rows && rows.length ? rows.map((r) => ({
+      date: r.date, phase: r.phase, tool: r.tool_used || r.tool,
+      action: r.action, result: r.result, feedback: r.feedback,
+    })) : LOG;
+    const icon = { Cowork: "🧭", Chrome: "🌐", Code: "💻" };
+    document.getElementById("timeline").innerHTML = data.map((d) => `
+      <div class="tl-item">
+        <div class="tl-date">${esc(d.date)} · ${esc(d.phase || "")}</div>
+        <div class="tl-body">
+          <div class="tl-tool">${icon[d.tool] || "🔧"} ${esc(d.tool)}</div>
+          <div class="tl-action">${esc(d.action)}</div>
+          <div class="tl-result">결과: ${esc(d.result)}</div>
+          ${d.feedback ? `<div class="tl-feedback">↳ ${esc(d.feedback)}</div>` : ""}
+        </div>
+      </div>`).join("");
+  }
+
+  function renderDashboard(data) {
+    document.getElementById("dash-grid").innerHTML = `
+      <div class="num-card"><div class="n">${data.articles.length}</div><div class="l">수집 기사</div></div>
+      <div class="num-card"><div class="n">${data.concepts.length}</div><div class="l">핵심 개념</div></div>
+      <div class="num-card"><div class="n">${data.quiz.length}</div><div class="l">퀴즈 문제</div></div>
+      <div class="num-card"><div class="n">${data.glossary.length}</div><div class="l">용어집</div></div>
+      <div class="num-card"><div class="n">${new Date().toISOString().slice(0,10)}</div><div class="l">최근 업데이트</div></div>`;
+
+    // 카테고리별 기사 분포 도넛
+    const counts = {};
+    data.articles.forEach((a) => counts[a.category] = (counts[a.category] || 0) + 1);
+    const labels = Object.keys(counts);
+    const ctx = document.getElementById("catDonut");
+    if (ctx && window.Chart) {
+      if (donut) donut.destroy();
+      donut = new Chart(ctx, {
+        type: "doughnut",
+        data: { labels, datasets: [{ data: labels.map((l) => counts[l]),
+          backgroundColor: labels.map((l) => CFG.CATEGORY_COLORS[l] || "#8A94A6") }] },
+        options: { plugins: { legend: { position: "bottom" }, title: { display: true, text: "카테고리별 기사 분포" } } }
+      });
+    }
+  }
+
+  function renderFeedback() {
+    document.getElementById("feedback-list").innerHTML = FEEDBACK.map((f) => `
+      <div class="feedback-box"><div class="fb-q">${esc(f.q)}</div><div class="fb-a">${esc(f.a)}</div></div>`).join("");
+  }
+
+  async function init(data) {
+    renderDashboard(data);
+    renderFeedback();
+    let devrows = [];
+    try { devrows = await window.DataLayer.loadSheet("devlog"); } catch (e) {}
+    renderTimeline(devrows);
+  }
+  return { init, LOG };
+})();
+
+</script>
+  <script>
+  (function () {
+    "use strict";
+    const $ = (s) => document.querySelector(s);
+
+    // 테마
+    const saved = (function(){ try { return localStorage.getItem(APP_CONFIG.THEME_STORAGE_KEY); } catch(e){ return null; } })();
+    if (saved) document.documentElement.setAttribute("data-theme", saved);
+    $("#theme-toggle").textContent = document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙";
+    $("#theme-toggle").addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", cur);
+      $("#theme-toggle").textContent = cur === "dark" ? "☀️" : "🌙";
+      try { localStorage.setItem(APP_CONFIG.THEME_STORAGE_KEY, cur); } catch(e){}
+      if (window.AMHSSimulation) AMHSSimulation.setSceneBg();
+    });
+
+    // 탭 전환
+    let simMounted = false;
+    document.querySelectorAll("#tab-nav button").forEach((b) => b.addEventListener("click", () => {
+      document.querySelectorAll("#tab-nav button").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+      $("#tab-" + b.dataset.tab).classList.add("active");
+      if (b.dataset.tab === "sim") {
+        AMHSSimulation.mount(); AMHSSimulation.bindPanel(); AMHSSimulation.resume();
+        // 상태 미러
+        const s = $("#sim-status"); const s2 = $("#sim-status2"); if (s && s2) s2.innerHTML = s.innerHTML;
+      } else {
+        AMHSSimulation.pause();   // 다른 탭에서는 렌더 루프 정지(메모리 누수/CPU 방지)
+      }
+    }));
+
+    // 데이터 로드 → 초기화
+    DataLayer.loadAll().then((data) => {
+      StudyTab.init(data);
+      DevLogTab.init(data);
+      const src = data.usedFallback ? "내장 폴백 데이터" : "Google Sheets (실시간)";
+      const ds = $("#data-source"); if (ds) ds.textContent = "출처: " + src;
+      if (data.usedFallback) $("#offline-banner").classList.add("show");
+    }).catch((err) => {
+      console.error(err);
+      $("#cards-grid").innerHTML = '<div class="empty">데이터 로드 실패. 새로고침해 주세요.</div>';
+    });
+  })();
+  </script>
+</body>
+</html>
