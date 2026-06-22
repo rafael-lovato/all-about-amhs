@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>All About AMHS · SK하이닉스 자동반송시스템 학습·시뮬레이션</title>
-  <meta name="description" content="SK하이닉스 IT(AMHS) 직무 학습 카드·퀴즈, Three.js 3D OHT 시뮬레이션, 개발 과정 기록 정적 웹앱" />
+  <meta name="description" content="SK하이닉스 IT(AMHS) 직무 학습 카드·퀴즈, FAB OHT 디지털 트윈 시뮬레이터, 개발 과정 기록 정적 웹앱" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -372,46 +372,10 @@ body {
     </div>
   </section>
 
-  <!-- ===== Tab 2: Simulation ===== -->
+  <!-- ===== Tab 2: Control 실습 (FAB OHT 디지털 트윈 시뮬레이터) ===== -->
   <section class="tab-panel" id="tab-sim">
-    <h2 class="section-title">FAB OHT 3D 시뮬레이션</h2>
-    <p class="section-sub">장비(회색 박스)를 클릭하면 OHT가 A* 최단경로로 이동합니다. 드래그=회전, 휠=줌.</p>
-    <div class="sim-layout">
-      <div id="sim-canvas-wrap">
-        <canvas id="sim-canvas"></canvas>
-        <div class="sim-hud">
-          <div id="sim-status"><span class="status-dot status-idle"></span>대기</div>
-          <div id="sim-dest" style="margin-top:4px">목적지: -</div>
-        </div>
-      </div>
-      <div class="sim-panel">
-        <h3>⚙️ 제어 파라미터</h3>
-        <div class="ctrl-row">
-          <label>OHT 속도: <span id="speed-val">1.5 m/s</span></label>
-          <input type="range" id="speed-slider" min="0.5" max="3" step="0.1" value="1.5" />
-        </div>
-        <div class="ctrl-row">
-          <label>우선순위(긴급도)</label>
-          <select id="priority-sel">
-            <option value="high">High (긴급)</option>
-            <option value="mid" selected>Medium</option>
-            <option value="low">Low</option>
-          </select>
-        </div>
-        <div class="ctrl-row">
-          <label>실시간 상태</label>
-          <div id="sim-status2" style="font-size:13px"></div>
-        </div>
-        <div class="ctrl-row">
-          <label>처리량(Throughput)</label>
-          <div class="throughput"><span id="throughput-val">0</span></div>
-        </div>
-        <div class="ctrl-row">
-          <button class="full" id="sim-reset">↺ 시뮬레이션 리셋</button>
-        </div>
-        <div class="sim-hint">※ A* 경로탐색·디스패칭을 Vanilla JS로 직접 구현했습니다.</div>
-      </div>
-    </div>
+    <iframe src="simulator.html" title="FAB OHT 디지털 트윈 시뮬레이터"
+      style="width:100%;height:82vh;border:0;border-radius:12px;background:#0e1320"></iframe>
   </section>
 
   <!-- ===== Tab 3: DevLog ===== -->
@@ -423,8 +387,8 @@ body {
     <h2 class="section-title">🧰 Claude 도구 활용</h2>
     <div class="gallery">
       <div class="tool-card cowork"><h4>🧭 Claude Cowork</h4><p>프로젝트 총괄·오케스트레이션과 반복 자가 평가(Self-feedback) 루프를 담당.</p><code>STEP1→6 자율 실행 / 데이터 정제 / 검증 채점</code></div>
-      <div class="tool-card chrome"><h4>🌐 Claude in Chrome</h4><p>SK하이닉스 뉴스룸을 6개 검색어로 크롤링해 실기사·기술 키워드 추출.</p><code>news.skhynix.co.kr → OHT·스마트팩토리·Physical AI</code></div>
-      <div class="tool-card code"><h4>💻 Claude Code</h4><p>Three.js 3D OHT 시뮬레이션과 A* 경로탐색 알고리즘을 직접 구현.</p><code>class AStarPathfinder { f = g + h }</code></div>
+      <div class="tool-card chrome"><h4>🌐 Claude in Chrome</h4><p>SK하이닉스 뉴스룸 크롤링 + Google Sheets 데이터 입력 + GitHub 배포 자동화.</p><code>news.skhynix.co.kr · IMPORTDATA · GitHub Pages</code></div>
+      <div class="tool-card code"><h4>💻 Claude Code</h4><p>Three.js 3D + A* 경로탐색 + FAB OHT 디지털 트윈 시뮬레이터를 직접 구현.</p><code>class AStarPathfinder { f = g + h }</code></div>
     </div>
 
     <h2 class="section-title">🗓️ 프로젝트 타임라인</h2>
@@ -444,7 +408,6 @@ body {
   <!-- CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <!-- App -->
   <script>
@@ -1869,10 +1832,18 @@ window.StudyTab = (function () {
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const catColor = (c) => CFG.CATEGORY_COLORS[c] || CFG.CATEGORY_COLORS["기타"];
+  const fmtDate = (d) => {
+    if (d == null) return "";
+    const s = String(d).trim();
+    if (/^\d{4,6}$/.test(s)) {
+      const dt = new Date(Date.UTC(1899, 11, 30) + Number(s) * 86400000);
+      return isNaN(dt) ? s : dt.toISOString().slice(0, 10);
+    }
+    return s;
+  };
 
   let articleFilter = "전체", articleSearch = "";
 
-  /* ---------- 학습 카드 ---------- */
   function renderCards() {
     const wrap = $("#cards-grid");
     let list = DATA.articles;
@@ -1887,7 +1858,7 @@ window.StudyTab = (function () {
       <div class="card" data-id="${esc(a.id)}">
         <span class="cat-badge" style="background:${catColor(a.category)}">${esc(a.category)}</span>
         <h3>${esc(a.title)}</h3>
-        <div class="meta">${esc(a.date || "")}</div>
+        <div class="meta">${esc(fmtDate(a.date))}</div>
         <div class="excerpt">${esc((a.summary || "").slice(0, 80))}${(a.summary||"").length>80?"…":""}</div>
       </div>`).join("");
     $$("#cards-grid .card").forEach((el) =>
@@ -1901,7 +1872,7 @@ window.StudyTab = (function () {
       <button class="close-x" aria-label="닫기">&times;</button>
       <span class="cat-badge" style="background:${catColor(a.category)}">${esc(a.category)}</span>
       <h2>${esc(a.title)}</h2>
-      <div class="meta" style="color:var(--text-soft);font-size:12px">${esc(a.date || "")}</div>
+      <div class="meta" style="color:var(--text-soft);font-size:12px">${esc(fmtDate(a.date))}</div>
       <p style="margin:12px 0;font-size:14px">${esc(a.summary)}</p>
       ${a.key_sentence ? `<div class="key-sentence">“${esc(a.key_sentence)}”</div>` : ""}
       ${a.quiz_q ? `<div class="quiz-inline"><strong>🧠 확인 퀴즈</strong><br>${esc(a.quiz_q)}
@@ -1927,7 +1898,6 @@ window.StudyTab = (function () {
     }));
   }
 
-  /* ---------- 개념 사전 ---------- */
   let conceptDiff = "전체";
   function renderConcepts() {
     const wrap = $("#concept-grid");
@@ -1963,7 +1933,6 @@ window.StudyTab = (function () {
     }));
   }
 
-  /* ---------- 퀴즈 ---------- */
   let quizPool = [], qIndex = 0, qScore = 0, qAnswered = false, sessionLog = [];
   function shuffle(a) { const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[r[i],r[j]]=[r[j],r[i]];} return r; }
 
@@ -2009,7 +1978,6 @@ window.StudyTab = (function () {
     $("#quiz-next").textContent = qIndex+1>=quizPool.length ? "결과 보기 →" : "다음 →";
   }
   function finishQuiz() {
-    // 히스토리 저장
     const hist = loadQuizHistory();
     hist.push({ date: new Date().toISOString().slice(0,10), score: qScore, total: quizPool.length, log: sessionLog });
     try { localStorage.setItem(CFG.QUIZ_STORAGE_KEY, JSON.stringify(hist.slice(-50))); } catch(e){}
@@ -2040,7 +2008,7 @@ window.StudyTab = (function () {
   let weakChart;
   function drawWeaknessChart() {
     const hist = loadQuizHistory();
-    const agg = {}; // {cat:{c, t}}
+    const agg = {};
     hist.forEach((h)=> (h.log||[]).forEach((e)=>{
       agg[e.category] = agg[e.category] || { c:0, t:0 };
       agg[e.category].t++; if (e.correct) agg[e.category].c++;
@@ -2059,7 +2027,6 @@ window.StudyTab = (function () {
     });
   }
 
-  /* ---------- 플래시카드 ---------- */
   let flashPool = [], fIndex = 0;
   function loadFlashProgress() { try { return JSON.parse(localStorage.getItem(CFG.FLASHCARD_STORAGE_KEY)||"{}"); } catch(e){ return {}; } }
   function saveFlashProgress(p) { try { localStorage.setItem(CFG.FLASHCARD_STORAGE_KEY, JSON.stringify(p)); } catch(e){} }
@@ -2098,7 +2065,6 @@ window.StudyTab = (function () {
     $("#flash-again").addEventListener("click", ()=>{ prog[g.term_kr]="review"; saveFlashProgress(prog); fIndex++; renderFlash(); });
   }
 
-  /* ---------- 서브탭 전환 ---------- */
   function initSubtabs() {
     $$("#study-subtabs button").forEach((b)=>b.addEventListener("click",()=>{
       $$("#study-subtabs button").forEach((x)=>x.classList.remove("active"));
@@ -2125,331 +2091,39 @@ window.StudyTab = (function () {
 </script>
   <script>
 /* =========================================================================
- * simulation.js — Tab 2: Control 실습 (3D)
- * Three.js r128 · FAB 레이아웃(20x15) · OHT 비히클 · A* 경로탐색
- * OrbitControls 미사용 → 마우스 드래그/휠 카메라 직접 구현
- * ========================================================================= */
-
-/* ---------- A* 경로탐색 (트랙 노드 그래프) ---------- */
-class AStarPathfinder {
-  constructor(nodes, edges) {
-    this.nodes = nodes;            // { id: {x, z} }
-    this.adj = edges;              // { id: [neighborId, ...] }
-  }
-  _h(a, b) { // 유클리드 휴리스틱
-    const p = this.nodes[a], q = this.nodes[b];
-    return Math.hypot(p.x - q.x, p.z - q.z);
-  }
-  findPath(start, goal) {
-    if (start == null || goal == null) return [];
-    if (start === goal) return [start];            // 엣지케이스: 시작=목적지
-    if (!this.nodes[start] || !this.nodes[goal]) return [];
-    const open = new Set([start]);
-    const came = {};
-    const g = { [start]: 0 };
-    const f = { [start]: this._h(start, goal) };
-    while (open.size) {
-      let cur = null, best = Infinity;
-      open.forEach((n) => { if ((f[n] ?? Infinity) < best) { best = f[n]; cur = n; } });
-      if (cur === goal) {            // 경로 복원
-        const path = [cur];
-        while (came[cur] != null) { cur = came[cur]; path.unshift(cur); }
-        return path;
-      }
-      open.delete(cur);
-      (this.adj[cur] || []).forEach((nb) => {
-        const tentative = (g[cur] ?? Infinity) + this._h(cur, nb);
-        if (tentative < (g[nb] ?? Infinity)) {
-          came[nb] = cur; g[nb] = tentative;
-          f[nb] = tentative + this._h(nb, goal);
-          open.add(nb);
-        }
-      });
-    }
-    return [];                       // 엣지케이스: 경로 없음
-  }
-}
-
-window.AMHSSimulation = (function () {
-  "use strict";
-  let scene, camera, renderer, raf = null, mounted = false;
-  let pathfinder, trackNodes = {}, trackAdj = {};
-  let oht, ohtState = "idle", ohtPath = [], ohtSeg = 0, ohtT = 0, foup = null, carrying = false;
-  let speed = 1.5, throughput = 0;
-  const stations = [];     // 클릭 가능한 목적지(노드 id 보유)
-  const railY = 4.5;
-  let theta = 0.9, phi = 0.9, radius = 26, target = new THREE.Vector3(0, 0, 0);
-  let dragging = false, lastX = 0, lastY = 0;
-  let webglOK = true;
-
-  function buildTrackGraph() {
-    // 격자형 천장 트랙: 가로 라인(인터베이) + 세로 라인(인트라베이)
-    trackNodes = {}; trackAdj = {};
-    const cols = [-8, -4, 0, 4, 8], rows = [-5, -1, 3];
-    cols.forEach((x) => rows.forEach((z) => {
-      const id = `${x}_${z}`; trackNodes[id] = { x, z }; trackAdj[id] = [];
-    }));
-    rows.forEach((z) => { for (let i = 0; i < cols.length - 1; i++) {
-      const a = `${cols[i]}_${z}`, b = `${cols[i+1]}_${z}`;
-      trackAdj[a].push(b); trackAdj[b].push(a);
-    }});
-    cols.forEach((x) => { for (let i = 0; i < rows.length - 1; i++) {
-      const a = `${x}_${rows[i]}`, b = `${x}_${rows[i+1]}`;
-      trackAdj[a].push(b); trackAdj[b].push(a);
-    }});
-    pathfinder = new AStarPathfinder(trackNodes, trackAdj);
-    return { cols, rows };
-  }
-
-  function addRail(a, b) {
-    const p = trackNodes[a], q = trackNodes[b];
-    const dx = q.x - p.x, dz = q.z - p.z;
-    const len = Math.hypot(dx, dz);
-    const geo = new THREE.CylinderGeometry(0.05, 0.05, len, 8);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x444444 });
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set((p.x + q.x) / 2, railY, (p.z + q.z) / 2);
-    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(dx, 0, dz).normalize());
-    scene.add(m);
-  }
-
-  function buildScene() {
-    buildTrackGraph();
-    const gridHelper = new THREE.GridHelper(24, 24, 0x335577, 0x223344);
-    gridHelper.position.y = 0; scene.add(gridHelper);
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 18),
-      new THREE.MeshStandardMaterial({ color: 0x0d1526 }));
-    floor.rotation.x = -Math.PI / 2; floor.position.y = -0.01; scene.add(floor);
-
-    const seen = new Set();
-    Object.keys(trackAdj).forEach((a) => trackAdj[a].forEach((b) => {
-      const key = [a, b].sort().join("|"); if (seen.has(key)) return; seen.add(key); addRail(a, b);
-    }));
-    Object.keys(trackNodes).forEach((id) => {
-      const n = trackNodes[id];
-      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8),
-        new THREE.MeshStandardMaterial({ color: 0x5B9BD5 }));
-      dot.position.set(n.x, railY, n.z); scene.add(dot);
-    });
-
-    Object.keys(trackNodes).forEach((id, i) => {
-      const n = trackNodes[id];
-      const st = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1.5),
-        new THREE.MeshStandardMaterial({ color: 0x888888 }));
-      st.position.set(n.x, 1, n.z);
-      st.userData = { nodeId: id, kind: "station", idx: i };
-      scene.add(st); stations.push(st);
-      const lp = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.2),
-        new THREE.MeshStandardMaterial({ color: 0x5B9BD5 }));
-      lp.position.set(n.x, 2.0, n.z + 0.8); scene.add(lp);
-    });
-
-    [[-10, -5], [10, 3]].forEach(([x, z]) => {
-      const stk = new THREE.Mesh(new THREE.BoxGeometry(2.5, 4, 2.5),
-        new THREE.MeshStandardMaterial({ color: 0x1A73E8 }));
-      stk.position.set(x, 2, z); scene.add(stk);
-    });
-
-    stations.slice(0, 6).forEach((st) => {
-      const f = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.3),
-        new THREE.MeshStandardMaterial({ color: 0xF5F5F5 }));
-      f.position.set(st.position.x, 2.2, st.position.z + 0.8); scene.add(f);
-    });
-
-    oht = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.5),
-      new THREE.MeshStandardMaterial({ color: 0xFF6B00 }));
-    const gripper = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8),
-      new THREE.MeshStandardMaterial({ color: 0x333333 }));
-    gripper.position.y = -0.45; gripper.name = "gripper";
-    oht.add(body); oht.add(gripper);
-    const startNode = Object.keys(trackNodes)[0];
-    oht.position.set(trackNodes[startNode].x, railY, trackNodes[startNode].z);
-    oht.userData.node = startNode;
-    foup = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.28),
-      new THREE.MeshStandardMaterial({ color: 0xF5F5F5 }));
-    foup.visible = false; oht.add(foup);
-    scene.add(oht);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-    dir.position.set(10, 20, 10); scene.add(dir);
-  }
-
-  function dispatch(destNodeId) {
-    const from = oht.userData.node;
-    const path = pathfinder.findPath(from, destNodeId);
-    if (!path.length) { setStatus("err"); return; }
-    if (path.length === 1) { setStatus("idle"); return; } // 이미 목적지
-    ohtPath = path; ohtSeg = 0; ohtT = 0; setStatus("move");
-    carrying = true; foup.visible = true; foup.position.set(0, -0.5, 0);
-  }
-
-  function setStatus(s) {
-    ohtState = s;
-    const dot = { idle: "status-idle", move: "status-move", err: "status-err" }[s];
-    const label = { idle: "대기", move: "이동 중", err: "오류(경로 없음)" }[s];
-    const el = document.getElementById("sim-status");
-    if (el) el.innerHTML = `<span class="status-dot ${dot}"></span>${label}`;
-    const el2 = document.getElementById("sim-status2");
-    if (el2) el2.innerHTML = `<span class="status-dot ${dot}"></span>${label}`;
-    const body = oht && oht.children[0];
-    if (body) body.material.color.set(s === "move" ? 0xFF6B00 : s === "err" ? 0xe85b5b : 0x34c77b);
-  }
-
-  function updateVehicle(dt) {
-    if (ohtState !== "move" || ohtSeg >= ohtPath.length - 1) {
-      if (ohtState === "move") {
-        setStatus("idle"); throughput++; carrying = false; foup.visible = false;
-        const tp = document.getElementById("throughput-val"); if (tp) tp.textContent = throughput;
-      }
-      return;
-    }
-    const a = trackNodes[ohtPath[ohtSeg]], b = trackNodes[ohtPath[ohtSeg + 1]];
-    const segLen = Math.hypot(b.x - a.x, b.z - a.z);
-    ohtT += (speed * dt) / Math.max(segLen, 0.001);
-    if (ohtT >= 1) { ohtT = 0; ohtSeg++; oht.userData.node = ohtPath[ohtSeg]; }
-    const t = Math.min(ohtT, 1);
-    oht.position.set(a.x + (b.x - a.x) * t, railY, a.z + (b.z - a.z) * t);
-  }
-
-  /* ---------- 수동 카메라 ---------- */
-  function updateCamera() {
-    camera.position.x = target.x + radius * Math.sin(phi) * Math.cos(theta);
-    camera.position.y = target.y + radius * Math.cos(phi);
-    camera.position.z = target.z + radius * Math.sin(phi) * Math.sin(theta);
-    camera.lookAt(target);
-  }
-  function bindControls(canvas) {
-    canvas.addEventListener("mousedown", (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
-    window.addEventListener("mouseup", () => dragging = false);
-    window.addEventListener("mousemove", (e) => {
-      if (!dragging) return;
-      theta += (e.clientX - lastX) * 0.01;
-      phi = Math.max(0.2, Math.min(Math.PI / 2.05, phi + (e.clientY - lastY) * 0.01));
-      lastX = e.clientX; lastY = e.clientY; updateCamera();
-    });
-    canvas.addEventListener("wheel", (e) => {
-      e.preventDefault(); radius = Math.max(8, Math.min(50, radius + e.deltaY * 0.02)); updateCamera();
-    }, { passive: false });
-    canvas.addEventListener("touchstart", (e) => { dragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }, { passive: true });
-    canvas.addEventListener("touchmove", (e) => {
-      if (!dragging) return; const t = e.touches[0];
-      theta += (t.clientX - lastX) * 0.01;
-      phi = Math.max(0.2, Math.min(Math.PI / 2.05, phi + (t.clientY - lastY) * 0.01));
-      lastX = t.clientX; lastY = t.clientY; updateCamera();
-    }, { passive: true });
-    canvas.addEventListener("touchend", () => dragging = false);
-    canvas.addEventListener("click", onPick);
-  }
-  const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
-  function onPick(e) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    ray.setFromCamera(mouse, camera);
-    const hits = ray.intersectObjects(stations, false);
-    if (hits.length) {
-      const node = hits[0].object.userData.nodeId;
-      dispatch(node);
-      const el = document.getElementById("sim-dest"); if (el) el.textContent = "목적지: " + node;
-    }
-  }
-
-  let lastTime = 0;
-  function animate(now) {
-    raf = requestAnimationFrame(animate);
-    const dt = Math.min((now - lastTime) / 1000 || 0, 0.05); lastTime = now;
-    updateVehicle(dt);
-    renderer.render(scene, camera);
-  }
-
-  function resize() {
-    const wrap = document.getElementById("sim-canvas-wrap"); if (!wrap || !renderer) return;
-    const w = wrap.clientWidth, h = wrap.clientHeight || 420;
-    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-  }
-
-  function mount() {
-    if (mounted) { resize(); return; }
-    const wrap = document.getElementById("sim-canvas-wrap");
-    try {
-      const test = document.createElement("canvas");
-      webglOK = !!(window.WebGLRenderingContext && (test.getContext("webgl") || test.getContext("experimental-webgl")));
-    } catch (e) { webglOK = false; }
-    if (!webglOK || !window.THREE) {
-      wrap.innerHTML = `<div class="sim-fallback">⚠️ 이 브라우저는 WebGL 3D를 지원하지 않습니다.<br>
-        간략 모드: A* 경로탐색은 정상 동작하며, 데스크톱 Chrome에서 3D를 확인하세요.</div>`;
-      return;
-    }
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a1120);
-    camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 1000);
-    const canvas = document.getElementById("sim-canvas");
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    buildScene(); bindControls(canvas); updateCamera(); resize();
-    setStatus("idle");
-    window.addEventListener("resize", resize);
-    lastTime = performance.now(); animate(lastTime);
-    mounted = true;
-  }
-
-  function setSceneBg() { if (scene) scene.background = new THREE.Color(0x0a1120); }
-  function pause() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
-  function resume() { if (mounted && !raf) { lastTime = performance.now(); animate(lastTime); } }
-  function dispose() { pause(); if (renderer) { renderer.dispose(); } mounted = false; }
-
-  let panelBound = false;
-  function bindPanel() {
-    if (panelBound) return;          // 탭 재진입 시 중복 바인딩 방지
-    panelBound = true;
-    const sp = document.getElementById("speed-slider");
-    if (sp) sp.addEventListener("input", (e) => {
-      speed = parseFloat(e.target.value);
-      const lbl = document.getElementById("speed-val"); if (lbl) lbl.textContent = speed.toFixed(1) + " m/s";
-    });
-    const reset = document.getElementById("sim-reset");
-    if (reset) reset.addEventListener("click", () => {
-      throughput = 0; const tp = document.getElementById("throughput-val"); if (tp) tp.textContent = 0;
-      const startNode = Object.keys(trackNodes)[0];
-      if (oht) { oht.position.set(trackNodes[startNode].x, railY, trackNodes[startNode].z); oht.userData.node = startNode; }
-      setStatus("idle");
-    });
-  }
-
-  return { mount, pause, resume, dispose, bindPanel, _AStar: AStarPathfinder, setSceneBg };
-})();
-
-</script>
-  <script>
-/* =========================================================================
  * devlog.js — Tab 3: 개발 과정 기록
  * 타임라인 · Claude 도구 갤러리 · 데이터 대시보드(도넛) · Self-feedback
- * dev_log는 Sheets에 없을 수 있어 내장 기록을 기본으로 사용
  * ========================================================================= */
 window.DevLogTab = (function () {
   "use strict";
   const CFG = window.APP_CONFIG;
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmtDate = (d) => {
+    if (d == null) return "";
+    const s = String(d).trim();
+    if (/^\d{4,6}$/.test(s)) {
+      const dt = new Date(Date.UTC(1899, 11, 30) + Number(s) * 86400000);
+      return isNaN(dt) ? s : dt.toISOString().slice(0, 10);
+    }
+    return s;
+  };
   let donut;
 
-  // 내장 dev_log (Sheets dev_log 탭 동기화 가능)
   const LOG = [
     { date: "2026-06-22", phase: "Phase 0", tool: "Cowork", action: "프로젝트 총괄 착수 · 5개 시트 구조 정의", result: "STEP 1 구조 확정", feedback: "스키마를 config와 1:1로 맞춰 fetch 매칭 보장" },
     { date: "2026-06-22", phase: "Phase 1", tool: "Chrome", action: "SK하이닉스 뉴스룸 6개 검색어 크롤링", result: "OHT·스마트팩토리·Physical AI 등 실기사 확보", feedback: "AMHS 직접 매칭 적어 SEMI 기술 레퍼런스로 보완" },
     { date: "2026-06-22", phase: "Phase 2", tool: "Cowork", action: "데이터 정제 · 카테고리 6분류 표준화", result: "articles25·concepts30·quiz30·glossary55", feedback: "공식 JD 4대 업무를 데이터에 반영" },
-    { date: "2026-06-22", phase: "Phase 3", tool: "Code", action: "정적 웹앱 7파일 개발(HTML/CSS/JS/Three.js)", result: "3탭 통합 · A* 직접 구현", feedback: "Sheets 미설정에도 동작하도록 폴백 데이터 내장" },
+    { date: "2026-06-22", phase: "Phase 3", tool: "Code", action: "정적 웹앱 개발(HTML/CSS/JS/Three.js)", result: "3탭 통합 · A* 직접 구현", feedback: "Sheets 미설정에도 동작하도록 폴백 데이터 내장" },
     { date: "2026-06-22", phase: "Phase 4", tool: "Cowork", action: "하네스 9항목 자동 검증 + Self-feedback 채점", result: "엣지케이스/오프라인/반응형 점검", feedback: "탭 전환 시 렌더 루프 pause로 메모리 절약" },
-    { date: "2026-06-22", phase: "Phase 5", tool: "Code", action: "README · 상대경로 · GitHub Pages 배포 준비", result: "배포 체크리스트 완성", feedback: "CDN·상대경로로 서버리스 배포 보장" },
+    { date: "2026-06-22", phase: "Phase 5", tool: "Code", action: "FAB OHT 디지털 트윈 시뮬레이터로 Control 탭 고도화", result: "엣지 안전거리·교차점 제어·데드락·알고리즘 비교 KPI", feedback: "단일차선 교착 → 유휴 차량 오프라인 주차로 흐름 개선" },
   ];
 
   const FEEDBACK = [
     { q: "왜 만들었나?", a: "SK하이닉스 IT(AMHS) 직무의 4대 업무(구축·제어·SW개발·운영)를 실제로 학습·체험하고, AI 도구를 단순 사용이 아닌 '데이터 수집→개발→검증→배포' 전 사이클 자동화에 활용했음을 증명하기 위해." },
-    { q: "어떻게 만들었나?", a: "Cowork(총괄·자가평가) · Chrome(뉴스룸 크롤링) · Code(Three.js 3D·A* 알고리즘)를 역할 분담해 서버 없는 정적 웹앱으로 구현. 데이터는 Google Sheets로 분리해 무중단 갱신." },
-    { q: "무엇을 배웠나?", a: "AMHS의 OHT/AMR/MES 연계 구조와 디스패칭·경로탐색 알고리즘을 직접 코드로 구현하며 체득. 비전 AI 캡스톤 경험이 AMHS 센서-제어 연계 업무로 직결됨을 확인." },
-    { q: "개선 루프", a: "1차: 3D가 모바일에서 무거움 → 탭 비활성 시 렌더 중지. 2차: Sheets 미설정 시 빈 화면 → 폴백 데이터 내장. 3차: A* 시작=목적지/경로없음 엣지케이스 → 분기 처리." },
+    { q: "어떻게 만들었나?", a: "Cowork(총괄·자가평가) · Chrome(뉴스룸 크롤링·Sheets 입력·배포) · Code(Three.js 3D·A* 알고리즘·디지털 트윈 시뮬레이터)를 역할 분담해 서버 없는 정적 웹앱으로 구현." },
+    { q: "무엇을 배웠나?", a: "AMHS의 OHT/AMR/MES 연계 구조와 디스패칭·경로탐색·교통제어 알고리즘을 직접 코드로 구현하며 체득. 비전 AI 캡스톤 경험이 AMHS 센서-제어 연계 업무로 직결됨을 확인." },
+    { q: "개선 루프", a: "1차: 3D가 모바일에서 무거움 → 탭 비활성 시 렌더 중지. 2차: Sheets 미설정 시 빈 화면 → 폴백 데이터 내장. 3차: 시뮬레이터 단일차선 교착 → 유휴 차량 주차·교차점만 충돌제어로 흐름 현실화." },
   ];
 
   function renderTimeline(rows) {
@@ -2460,7 +2134,7 @@ window.DevLogTab = (function () {
     const icon = { Cowork: "🧭", Chrome: "🌐", Code: "💻" };
     document.getElementById("timeline").innerHTML = data.map((d) => `
       <div class="tl-item">
-        <div class="tl-date">${esc(d.date)} · ${esc(d.phase || "")}</div>
+        <div class="tl-date">${esc(fmtDate(d.date))} · ${esc(d.phase || "")}</div>
         <div class="tl-body">
           <div class="tl-tool">${icon[d.tool] || "🔧"} ${esc(d.tool)}</div>
           <div class="tl-action">${esc(d.action)}</div>
@@ -2478,7 +2152,6 @@ window.DevLogTab = (function () {
       <div class="num-card"><div class="n">${data.glossary.length}</div><div class="l">용어집</div></div>
       <div class="num-card"><div class="n">${new Date().toISOString().slice(0,10)}</div><div class="l">최근 업데이트</div></div>`;
 
-    // 카테고리별 기사 분포 도넛
     const counts = {};
     data.articles.forEach((a) => counts[a.category] = (counts[a.category] || 0) + 1);
     const labels = Object.keys(counts);
@@ -2524,23 +2197,14 @@ window.DevLogTab = (function () {
       document.documentElement.setAttribute("data-theme", cur);
       $("#theme-toggle").textContent = cur === "dark" ? "☀️" : "🌙";
       try { localStorage.setItem(APP_CONFIG.THEME_STORAGE_KEY, cur); } catch(e){}
-      if (window.AMHSSimulation) AMHSSimulation.setSceneBg();
     });
 
-    // 탭 전환
-    let simMounted = false;
+    // 탭 전환 (Control 탭은 simulator.html iframe — 자체 완결)
     document.querySelectorAll("#tab-nav button").forEach((b) => b.addEventListener("click", () => {
       document.querySelectorAll("#tab-nav button").forEach((x) => x.classList.remove("active"));
       b.classList.add("active");
       document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
       $("#tab-" + b.dataset.tab).classList.add("active");
-      if (b.dataset.tab === "sim") {
-        AMHSSimulation.mount(); AMHSSimulation.bindPanel(); AMHSSimulation.resume();
-        // 상태 미러
-        const s = $("#sim-status"); const s2 = $("#sim-status2"); if (s && s2) s2.innerHTML = s.innerHTML;
-      } else {
-        AMHSSimulation.pause();   // 다른 탭에서는 렌더 루프 정지(메모리 누수/CPU 방지)
-      }
     }));
 
     // 데이터 로드 → 초기화

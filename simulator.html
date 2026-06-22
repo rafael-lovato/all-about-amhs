@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FAB OHT 디지털 트윈 시뮬레이터 · All About AMHS</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --navy:#0C4DA1;--navy-d:#093a7a;--sky:#5B9BD5;--orange:#FF6B00;--teal:#00A3A1;
+  --bg:#0e1320;--panel:#161d2e;--panel2:#1e2740;--line:#2b3650;--text:#e8edf6;--soft:#9aa8c2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"Noto Sans KR",sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
+.app{display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:1fr 340px;height:100vh;gap:1px;background:var(--line);}
+header{grid-column:1/3;background:linear-gradient(135deg,var(--navy),var(--navy-d));display:flex;align-items:center;justify-content:space-between;padding:8px 16px;gap:12px;flex-wrap:wrap;}
+header h1{font-size:15px;font-weight:800;letter-spacing:-.3px;}
+header h1 small{font-weight:400;opacity:.8;font-size:11px;display:block;}
+.toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.btn{background:rgba(255,255,255,.14);border:none;color:#fff;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;}
+.btn:hover{background:rgba(255,255,255,.26);}
+.btn.on{background:var(--orange);}
+.btn.idle{background:#2b9b5e;}
+.stage{display:flex;background:var(--bg);position:relative;min-height:0;overflow:hidden;}
+#cv{width:100%;height:100%;display:block;cursor:grab;}
+#cv:active{cursor:grabbing;}
+#three{position:absolute;inset:0;width:100%;height:100%;display:none;}
+.legend{position:absolute;left:10px;top:10px;background:rgba(10,16,28,.78);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11px;line-height:1.7;pointer-events:none;}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+.hint{position:absolute;right:10px;bottom:10px;background:rgba(10,16,28,.7);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--soft);}
+aside{grid-row:2/3;grid-column:2/3;background:var(--panel);overflow-y:auto;padding:12px;}
+.sec{margin-bottom:14px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel2);}
+.sec h3{font-size:12px;color:var(--sky);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;}
+.row{margin-bottom:8px;}
+.row label{font-size:11px;color:var(--soft);display:flex;justify-content:space-between;margin-bottom:3px;}
+.row input[type=range]{width:100%;accent-color:var(--orange);}
+.row select{width:100%;padding:6px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-family:inherit;font-size:12px;}
+.algo-note{font-size:11px;color:var(--soft);line-height:1.55;margin-top:6px;border-top:1px dashed var(--line);padding-top:6px;}
+.algo-note b{color:var(--text);}
+.kpi-wrap{grid-column:1/3;background:var(--panel);border-top:1px solid var(--line);display:flex;gap:10px;padding:8px 12px;overflow-x:auto;}
+.kpi{flex:0 0 auto;min-width:92px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 11px;text-align:center;}
+.kpi .v{font-size:18px;font-weight:800;color:var(--orange);}
+.kpi .l{font-size:10px;color:var(--soft);margin-top:1px;}
+.kpi.good .v{color:#34c77b;}
+.kpi.warn .v{color:#ff4d4d;}
+table.cmp{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:6px;}
+table.cmp th,table.cmp td{border:1px solid var(--line);padding:3px 5px;text-align:center;}
+table.cmp th{background:var(--bg);color:var(--sky);}
+.tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:6px;background:var(--bg);color:var(--soft);margin:1px;}
+@media(max-width:820px){.app{grid-template-columns:1fr;grid-template-rows:auto 46vh auto auto;}aside{grid-row:auto;grid-column:1;}.kpi-wrap,header{grid-column:1;}.stage{grid-column:1;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>FAB OHT 디지털 트윈 시뮬레이터<small>반도체 자동반송 제어 알고리즘 연구·교육 플랫폼 · All About AMHS</small></h1>
+    <div class="toolbar">
+      <button class="btn idle" id="playBtn">▶ 시작</button>
+      <button class="btn" id="stepBtn">⏭ 스텝</button>
+      <button class="btn" id="resetBtn">↺ 리셋</button>
+      <button class="btn" id="viewBtn">🧊 3D 전환</button>
+      <button class="btn" id="recordBtn">📊 결과 기록</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <canvas id="cv"></canvas>
+    <canvas id="three"></canvas>
+    <div class="legend" id="legend"></div>
+    <div class="hint">드래그=이동 · 휠=줌 · 회색=Tool · 파랑=Stocker · 노랑점=분기/합류 · 점=OHT</div>
+  </div>
+
+  <aside>
+    <div class="sec">
+      <h3>실험 조건</h3>
+      <div class="row"><label>OHT 수 <span id="vN">12</span></label><input type="range" id="vehicles" min="2" max="40" value="12"></div>
+      <div class="row"><label>Lot 발생률 λ (/분) <span id="vL">16</span></label><input type="range" id="lotRate" min="2" max="60" value="16"></div>
+      <div class="row"><label>발생 모델</label><select id="genMode"><option value="poisson">Poisson 분포</option><option value="random">랜덤 균등</option><option value="fixed">일정 주기</option></select></div>
+      <div class="row"><label>FAB 규모 (Bay 수) <span id="vB">3</span></label><input type="range" id="bays" min="2" max="6" value="3"></div>
+      <div class="row"><label>Bay 길이 (Tool 수) <span id="vT">6</span></label><input type="range" id="toolsPerBay" min="3" max="10" value="6"></div>
+      <div class="row"><label>시뮬레이션 속도 <span id="vS">3×</span></label><input type="range" id="simSpeed" min="1" max="12" value="3"></div>
+    </div>
+
+    <div class="sec">
+      <h3>제어 알고리즘</h3>
+      <div class="row"><label>Dispatching (차량 할당)</label><select id="dispatch">
+        <option value="fifo">FIFO</option><option value="nvf" selected>Nearest Vehicle First</option>
+        <option value="llv">Least Loaded Vehicle</option><option value="eav">Earliest Available Vehicle</option></select></div>
+      <div class="row"><label>Path Planning (경로 탐색)</label><select id="path">
+        <option value="shortest">Shortest Path (Hop)</option><option value="dijkstra">Dijkstra</option>
+        <option value="astar" selected>A*</option><option value="dynamic">Dynamic Routing</option></select></div>
+      <div class="row"><label>Traffic Control (교통 제어)</label><select id="traffic">
+        <option value="static">Static Rule</option><option value="reservation" selected>Reservation Based</option>
+        <option value="predictive">Predictive</option></select></div>
+      <div class="algo-note" id="algoNote"></div>
+    </div>
+
+    <div class="sec">
+      <h3>실험 결과 비교</h3>
+      <div id="cmpBox"><span class="tag">아직 기록 없음 — ▶ 실행 후 "결과 기록"</span></div>
+    </div>
+  </aside>
+
+  <div class="kpi-wrap" id="kpis"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+/* =========================================================================
+ * FAB OHT 디지털 트윈 시뮬레이터
+ * 엣지 안전거리 이동 모델 · 교차점 충돌제어 · 데드락 · 알고리즘 비교 · KPI
+ * ========================================================================= */
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function expoInterval(lpm){const lps=lpm/60;return -Math.log(1-Math.random())/Math.max(lps,1e-6);}
+
+/* ===== 1. FAB 레일 그래프 (Bay/Interbay/Branch/Merge/Stocker/Buffer) ===== */
+class FabLayout{
+  constructor(bays,tpb){this.bays=bays;this.tpb=tpb;this.nodes=[];this.adj={};this.byId={};
+    this.tools=[];this.stockers=[];this.buffers=[];this.branches=[];this.merges=[];this.build();}
+  add(id,x,y,type){const n={id,x,y,type};this.nodes.push(n);this.byId[id]=n;this.adj[id]=[];return n;}
+  link(a,b){if(!this.adj[a].includes(b))this.adj[a].push(b);}
+  build(){
+    const W=1000,H=620,mTop=70,mBot=H-70,mL=90,mR=W-90;
+    const TL=this.add("ib_tl",mL,mTop,"ib"),TR=this.add("ib_tr",mR,mTop,"ib"),
+          BR=this.add("ib_br",mR,mBot,"ib"),BL=this.add("ib_bl",mL,mBot,"ib");
+    const bays=this.bays,tpb=this.tpb,bayY=[];
+    for(let b=0;b<bays;b++)bayY.push(mTop+(mBot-mTop)*(b+1)/(bays+1));
+    const leftNodes=[TL],rightNodes=[TR],mergeN=[];
+    for(let b=0;b<bays;b++){
+      const y=bayY[b];
+      const br=this.add("br_"+b,mL,y,"branch");this.branches.push(br);leftNodes.push(br);
+      const mg=this.add("mg_"+b,mR,y,"merge");this.merges.push(mg);rightNodes.push(mg);mergeN.push(mg);
+      let prev=br;
+      for(let t=0;t<tpb;t++){
+        const x=mL+(mR-mL)*(t+1)/(tpb+1);
+        const rp=this.add(`rp_${b}_${t}`,x,y,"rail");
+        const tn=this.add(`tool_${b}_${t}`,x,y-22,"tool");tn.bay=b;this.tools.push(tn);
+        this.link(prev.id,rp.id);this.link(rp.id,tn.id);this.link(tn.id,rp.id);
+        prev=rp;
+      }
+      this.link(prev.id,mg.id);
+    }
+    leftNodes.push(BL);rightNodes.push(BR);
+    const ls=[...leftNodes].sort((a,b)=>b.y-a.y);for(let i=0;i<ls.length-1;i++)this.link(ls[i].id,ls[i+1].id);
+    const rs=[...rightNodes].sort((a,b)=>a.y-b.y);for(let i=0;i<rs.length-1;i++)this.link(rs[i].id,rs[i+1].id);
+    this.link(TL.id,TR.id);this.link(BR.id,BL.id);
+    const s1=this.add("stk_0",mL-46,mTop-34,"stocker");this.stockers.push(s1);
+    const s2=this.add("stk_1",mR+16,mBot+14,"stocker");this.stockers.push(s2);
+    this.link(TL.id,s1.id);this.link(s1.id,TL.id);this.link(BR.id,s2.id);this.link(s2.id,BR.id);
+    mergeN.forEach((m,i)=>{const bf=this.add("buf_"+i,m.x-34,m.y+26,"buffer");this.buffers.push(bf);this.link(m.id,bf.id);this.link(bf.id,m.id);});
+    this.edgeLen={};
+    for(const a in this.adj)for(const b of this.adj[a])this.edgeLen[a+">"+b]=dist(this.byId[a],this.byId[b]);
+    this.W=W;this.H=H;
+  }
+  neighbors(id){return this.adj[id];}
+  len(a,b){return this.edgeLen[a+">"+b]??dist(this.byId[a],this.byId[b]);}
+}
+
+/* ===== 2. 경로 탐색 ===== */
+const PathPlanner={
+  shortest(g,s,t){return this._s(g,s,t,()=>1,()=>0);},
+  dijkstra(g,s,t){return this._s(g,s,t,(a,b)=>g.len(a,b),()=>0);},
+  astar(g,s,t){const T=g.byId[t];return this._s(g,s,t,(a,b)=>g.len(a,b),n=>dist(g.byId[n],T));},
+  dynamic(g,s,t,c){const T=g.byId[t];return this._s(g,s,t,(a,b)=>g.len(a,b)*(1+3*(c[a+">"+b]||0)),n=>dist(g.byId[n],T));},
+  _s(g,s,t,cost,h){if(s===t)return[s];const open=new Set([s]),came={},gs={[s]:0},f={[s]:h(s)};
+    while(open.size){let cur=null,best=1/0;open.forEach(n=>{if(f[n]<best){best=f[n];cur=n;}});
+      if(cur===t){const p=[cur];while(came[cur]!=null){cur=came[cur];p.unshift(cur);}return p;}
+      open.delete(cur);for(const nb of g.neighbors(cur)){const tg=gs[cur]+cost(cur,nb);
+        if(tg<(gs[nb]??1/0)){came[nb]=cur;gs[nb]=tg;f[nb]=tg+h(nb);open.add(nb);}}}
+    return[];}
+};
+
+/* ===== 3. OHT 상태머신 ===== */
+const STATE={IDLE:"Idle",DISPATCH:"Dispatch",TOPICK:"MoveToPickup",PICK:"Pickup",
+  LOADED:"LoadedMove",DELIV:"Delivery",WAIT:"Waiting",CONG:"Congestion",RECOV:"Recovery"};
+const STATE_COLOR={Idle:"#34c77b",Dispatch:"#3b9bff",MoveToPickup:"#3b9bff",Pickup:"#3b9bff",
+  LoadedMove:"#FF6B00",Delivery:"#FF6B00",Waiting:"#ffd23f",Congestion:"#ff4d4d",Recovery:"#b06bff"};
+const WORKING=new Set([STATE.DISPATCH,STATE.TOPICK,STATE.PICK,STATE.LOADED,STATE.DELIV]);
+let VID=0;
+class OHT{constructor(n){this.id=++VID;this.node=n;this.x=n.x;this.y=n.y;this.state=STATE.IDLE;
+  this.path=[];this.pIdx=0;this.edgeT=0;this.lot=null;this.task=null;this.parking=false;
+  this.moveDist=0;this.emptyDist=0;this.waitTime=0;this.workTime=0;this.stuck=0;this.avail=0;this.taskCount=0;}}
+
+/* ===== 4. 시뮬레이션 엔진 ===== */
+const GAP=14;             // 차량 간 안전거리(px) — 추월불가/충돌방지
+const CONFLICT=new Set(["branch","merge"]); // 실제 충돌점(분기/합류)만 단독 통과
+class Sim{
+  constructor(cfg){this.cfg=cfg;this.reset();}
+  reset(){
+    const c=this.cfg;this.g=new FabLayout(c.bays,c.toolsPerBay);
+    this.t=0;this.vehicles=[];this.lots=[];this.pending=[];this.nextLot=0;this.lotSeq=0;
+    this.cong={};this.reserv={};
+    this.kpi={done:0,cycle:[],deliv:[],deadlock:0,queue:[],congSamp:[],ticks:0};
+    this.deadlockFlash=0;
+    const park=[...this.g.tools];               // 유휴 차량은 Tool 옆(오프라인)에 주차 → 본선 미점유
+    for(let i=0;i<c.vehicles;i++){const n=park[i%park.length];const v=new OHT(n);this.vehicles.push(v);}
+    VID=this.vehicles.length;this.tools=this.g.tools;this.scheduleNextLot();
+  }
+  scheduleNextLot(){const c=this.cfg;
+    if(c.genMode==="poisson")this.nextLot=this.t+expoInterval(c.lotRate);
+    else if(c.genMode==="random")this.nextLot=this.t+rnd(0.3,1.7)*(60/c.lotRate);
+    else this.nextLot=this.t+60/c.lotRate;}
+  spawnLot(){const T=this.tools;if(T.length<2)return;
+    const a=T[Math.floor(Math.random()*T.length)];let b=T[Math.floor(Math.random()*T.length)],g=0;
+    while(b===a&&g++<5)b=T[Math.floor(Math.random()*T.length)];
+    const lot={id:++this.lotSeq,from:a,to:b,born:this.t,picked:null,state:"queued"};
+    this.lots.push(lot);this.pending.push(lot);}
+  railOf(tool){const rp=this.g.neighbors(tool.id).find(id=>this.g.byId[id].type==="rail");return this.g.byId[rp]||tool;}
+  plan(s,t){const m=this.cfg.path,g=this.g;
+    if(m==="shortest")return PathPlanner.shortest(g,s,t);
+    if(m==="dijkstra")return PathPlanner.dijkstra(g,s,t);
+    if(m==="dynamic")return PathPlanner.dynamic(g,s,t,this.cong);
+    return PathPlanner.astar(g,s,t);}
+  routeTo(v,target,next){v.path=this.plan(v.node.id,target);v.pIdx=0;v.edgeT=0;v._next=next;v._target=target;
+    if(v.path.length<=1)this.arrive(v);}
+  /* ---- Dispatching ---- */
+  dispatch(){
+    if(!this.pending.length)return;
+    const mode=this.cfg.dispatch;
+    this.pending.sort((p,q)=>p.born-q.born);
+    for(const lot of [...this.pending]){
+      const free=this.vehicles.filter(v=>v.state===STATE.IDLE);
+      if(!free.length)break;
+      const pick=this.railOf(lot.from);let v;
+      if(mode==="fifo")v=free[0];
+      else if(mode==="nvf")v=free.reduce((m,x)=>dist(x,pick)<dist(m,pick)?x:m);
+      else if(mode==="llv")v=free.reduce((m,x)=>x.taskCount<m.taskCount?x:m);
+      else v=free.reduce((m,x)=>x.avail<m.avail?x:m);
+      v.task=lot;lot.state="assigned";v.taskCount++;v.parking=false;v.state=STATE.TOPICK;
+      this.routeTo(v,pick.id,STATE.TOPICK);
+      this.pending=this.pending.filter(p=>p!==lot);
+    }
+  }
+  arrive(v){const ns=v._next;
+    if(ns===STATE.TOPICK){v.state=STATE.PICK;v._pickT=this.t+0.5;}
+    else if(ns===STATE.LOADED){v.state=STATE.DELIV;v._dropT=this.t+0.5;}
+    else{v.state=STATE.IDLE;v.parking=false;v.path=[];}}   // 주차 도착
+  /* ---- 교차점(분기/합류) 통과 가능? — Traffic Control 분기 ---- */
+  canCross(v,nextId,nodeOcc){
+    const node=this.g.byId[nextId];
+    if(!CONFLICT.has(node.type))return true;            // 일반 구간은 엣지 안전거리로만 제어
+    const occ=nodeOcc[nextId];
+    if(occ&&occ!==v.id)return false;                    // 교차점 단독 통과(물리 점유)
+    const tc=this.cfg.traffic;
+    if(tc==="static"){
+      // 고정 우선순위: 동시 진입 경쟁 시 id 작은 차량 우선(→ 일부 기아 발생)
+      const compet=this.vehicles.filter(o=>o!==v&&o.state!==STATE.IDLE&&o.path[o.pIdx+1]===nextId&&o.edgeT>0.78);
+      if(compet.some(o=>o.id<v.id))return false;
+    }else{
+      // reservation / predictive: 시간 예약으로 충돌 차단(기아 없음)
+      const r=this.reserv[nextId];
+      if(r&&r.vid!==v.id&&r.until>this.t)return false;
+    }
+    return true;
+  }
+  step(dt){
+    const c=this.cfg;
+    while(this.t>=this.nextLot){this.spawnLot();this.scheduleNextLot();}
+    this.dispatch();
+    // 혼잡도(엣지 점유) EWMA + 노드 점유
+    const load={},nodeOcc={};
+    for(const v of this.vehicles){
+      if(v.path.length>v.pIdx+1){const e=v.node.id+">"+v.path[v.pIdx+1];load[e]=(load[e]||0)+1;}
+      if(v.edgeT<0.25)nodeOcc[v.node.id]=v.id;
+    }
+    for(const e in this.g.edgeLen){const tgt=Math.min(1,(load[e]||0)/2);this.cong[e]=(this.cong[e]||0)*0.92+tgt*0.08;}
+    // Predictive: 다음 구간이 혼잡하면 디스패치를 약간 미뤄(미터링) 잼 예방 — 차량이 진입 전 잠깐 보류
+    // 타이머 상태(Pickup/Delivery)
+    for(const v of this.vehicles){
+      if(v.state===STATE.PICK&&this.t>=v._pickT){v.lot=v.task;v.lot.picked=this.t;v.lot.state="loaded";
+        const drop=this.railOf(v.task.to);v.state=STATE.LOADED;this.routeTo(v,drop.id,STATE.LOADED);}
+      else if(v.state===STATE.DELIV&&this.t>=v._dropT){const lot=v.lot;lot.state="done";lot.done=this.t;
+        this.kpi.done++;this.kpi.cycle.push(lot.done-lot.born);this.kpi.deliv.push(lot.done-lot.picked);
+        v.lot=null;v.task=null;v.avail=this.t;v.state=STATE.IDLE;
+        const park=this.tools.reduce((m,x)=>dist(x,v)<dist(m,v)?x:m);v.parking=true;this.routeTo(v,park.id,"park");}
+    }
+    // 같은 엣지 위 차량 그룹(앞차 계산)
+    const seg={};
+    for(const v of this.vehicles){if((WORKING.has(v.state)||(v.state===STATE.IDLE&&v.parking))&&v.path.length>v.pIdx+1){
+      const k=v.node.id+">"+v.path[v.pIdx+1];(seg[k]=seg[k]||[]).push(v);}}
+    let moving=0,slowed=0;
+    for(const v of this.vehicles){
+      if(v.state===STATE.PICK||v.state===STATE.DELIV)continue;
+      const isMove=(WORKING.has(v.state)||(v.state===STATE.IDLE&&v.parking))&&v.path.length>v.pIdx+1;
+      if(!isMove)continue;
+      const curId=v.node.id,nextId=v.path[v.pIdx+1],segLen=this.g.len(curId,nextId);
+      let maxT=1;const gapFrac=GAP/Math.max(segLen,1);
+      for(const o of seg[curId+">"+nextId])if(o!==v&&o.edgeT>v.edgeT)maxT=Math.min(maxT,o.edgeT-gapFrac);
+      let gated=false;
+      if(v.edgeT>=0.8&&!this.canCross(v,nextId,nodeOcc)){maxT=Math.min(maxT,0.8);gated=true;}
+      const before=v.edgeT;
+      const free=(c.vSpeed*dt)/Math.max(segLen,1);
+      v.edgeT=Math.max(before,Math.min(before+free,maxT));
+      const adv=v.edgeT-before, moved=adv*segLen;
+      v.moveDist+=moved;if(!v.lot)v.emptyDist+=moved;
+      if(WORKING.has(v.state)){moving++;if(WORKING.has(v.state))v.workTime+=dt;}
+      if(adv<=1e-6){ // 정지(차단/게이트)
+        v.stuck+=dt;v.waitTime+=dt;if(WORKING.has(v.state)){slowed++;v.state=(gated&&!(this.cong[curId+">"+nextId]>0.45))?STATE.WAIT:STATE.CONG;}
+      }else{
+        if(WORKING.has(v.state)&&adv<free*0.6)slowed++;            // 느리게 진행=혼잡
+        v.stuck=0;if(v.lot)v.state=STATE.LOADED;else if(v.task)v.state=STATE.TOPICK;
+      }
+      const A=this.g.byId[curId],B=this.g.byId[nextId];
+      v.x=A.x+(B.x-A.x)*v.edgeT;v.y=A.y+(B.y-A.y)*v.edgeT;
+      if(v.edgeT>=1-1e-6){
+        if((c.traffic==="reservation"||c.traffic==="predictive")&&CONFLICT.has(B.type))this.reserv[B.id]={vid:v.id,until:this.t+0.7};
+        v.node=B;v.pIdx++;v.edgeT=0;v.x=B.x;v.y=B.y;
+        if(v.path.length<=v.pIdx+1)this.arrive(v);
+      }
+    }
+    this.detectDeadlock(dt);
+    this.kpi.ticks++;this.kpi.congSamp.push(moving>0?slowed/moving:0);if(this.kpi.congSamp.length>800)this.kpi.congSamp.shift();
+    this.kpi.queue.push(this.pending.length);if(this.kpi.queue.length>800)this.kpi.queue.shift();
+    if(this.deadlockFlash>0)this.deadlockFlash=Math.max(0,this.deadlockFlash-dt);
+    this.t+=dt;
+  }
+  detectDeadlock(dt){
+    const blocked=this.vehicles.filter(v=>(v.state===STATE.WAIT||v.state===STATE.CONG)&&v.stuck>3.0);
+    if(blocked.length<2)return;
+    const waitFor={},occAt={};
+    for(const v of this.vehicles)if(v.edgeT<0.4)occAt[v.node.id]=v.id;
+    for(const v of blocked){const nx=v.path[v.pIdx+1];const w=occAt[nx];if(w&&w!==v.id)waitFor[v.id]=w;}
+    for(const s of Object.keys(waitFor)){let cur=+s,steps=0,seen=new Set();
+      while(cur!=null&&!seen.has(cur)&&steps++<blocked.length+2){seen.add(cur);cur=waitFor[cur];}
+      if(cur!=null&&seen.has(cur)){this.kpi.deadlock++;this.deadlockFlash=1.0;
+        const victim=this.vehicles.find(x=>x.id===Math.max(...seen));
+        if(victim){victim.state=STATE.RECOV;victim.stuck=0;
+          const buf=this.g.buffers[0];if(buf)this.routeTo(victim,buf.id,victim.lot?STATE.LOADED:STATE.TOPICK);}
+        break;}}
+  }
+  metrics(){const k=this.kpi,n=this.vehicles.length;const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0;
+    const working=this.vehicles.filter(v=>WORKING.has(v.state)).length;
+    const tm=this.vehicles.reduce((s,v)=>s+v.moveDist,0),te=this.vehicles.reduce((s,v)=>s+v.emptyDist,0);
+    const min=Math.max(this.t/60,1e-6);
+    return{throughput:k.done/min,done:k.done,cycle:avg(k.cycle),deliv:avg(k.deliv),
+      wait:avg(this.vehicles.map(v=>v.waitTime)),util:working/n,empty:tm>0?te/tm:0,
+      cong:avg(k.congSamp),deadlock:k.deadlock,queue:avg(k.queue)};}
+}
+
+/* ===== 5. 알고리즘 교육 설명 ===== */
+const ALGO_DOC={
+  dispatch:{fifo:["FIFO","오래된 Lot부터 처리","구현 단순·공정성↑","혼잡 시 먼 차량 배정→이동·대기↑","저부하 단순 라인"],
+    nvf:["Nearest Vehicle First","픽업지 최근접 유휴차량","Empty travel↓·응답 빠름","구역 편중→불균형","중·고부하 일반 FAB"],
+    llv:["Least Loaded Vehicle","누적 작업 최소 차량","차량 부하 균형↑","거리 미고려→경로 비효율","부하 평탄화 중요 라인"],
+    eav:["Earliest Available","가장 빨리 가용해질 차량","대기열 처리↑","가용시점 예측 오차 민감","고부하 연속발생"]},
+  path:{shortest:["Shortest(Hop)","최소 노드 수","계산 매우 빠름","실제 거리/혼잡 무시","균일 격자·교육"],
+    dijkstra:["Dijkstra","거리 가중 최단","최적 거리 보장","탐색량↑","정적 거리 최적화"],
+    astar:["A*","거리+휴리스틱","빠르고 최적","정적 가중치만","대부분 FAB 기본"],
+    dynamic:["Dynamic Routing","실시간 혼잡 가중 우회","병목 완화","계산↑·경로 진동","고혼잡 피크"]},
+  traffic:{static:["Static Rule","고정 우선순위 양보","단순·예측가능","경쟁 시 기아·비효율","저밀도"],
+    reservation:["Reservation","노드 시간예약 충돌차단","충돌·데드락↓","예약 오버헤드·보수적","중밀도 표준"],
+    predictive:["Predictive","혼잡 예측 진입 미터링","잼 예방·안정","예측 오차 시 과대기","고밀도 피크"]}
+};
+function updateAlgoNote(){const d=ALGO_DOC.dispatch[$("dispatch").value],p=ALGO_DOC.path[$("path").value],t=ALGO_DOC.traffic[$("traffic").value];
+  const blk=(x,k)=>`<div style="margin-bottom:5px"><b>${k}: ${x[0]}</b> — ${x[1]}<br><span class="tag">+ ${x[2]}</span><span class="tag">− ${x[3]}</span><span class="tag">적용 ${x[4]}</span></div>`;
+  $("algoNote").innerHTML=blk(d,"Dispatch")+blk(p,"Path")+blk(t,"Traffic");}
+
+/* ===== 6. 렌더링 (2D / 3D) ===== */
+let sim,raf,playing=false,view2D=true;
+const cv=$("cv"),ctx=cv.getContext("2d");
+let cam={x:0,y:0,z:1},drag=false,lx=0,ly=0;
+function fit(){cv.width=cv.clientWidth;cv.height=cv.clientHeight;
+  if(sim){const s=Math.min(cv.width/(sim.g.W+140),cv.height/(sim.g.H+140));cam.z=s;cam.x=(cv.width-sim.g.W*s)/2;cam.y=(cv.height-sim.g.H*s)/2;}}
+const W2S=(x,y)=>[x*cam.z+cam.x,y*cam.z+cam.y];
+function draw2D(){ctx.clearRect(0,0,cv.width,cv.height);const g=sim.g;
+  if(sim.deadlockFlash>0){ctx.fillStyle=`rgba(255,77,77,${0.12*sim.deadlockFlash})`;ctx.fillRect(0,0,cv.width,cv.height);}
+  ctx.lineWidth=Math.max(2,3*cam.z);
+  for(const a in g.adj)for(const b of g.adj[a]){const A=g.byId[a],B=g.byId[b];if(A.type==="tool"||B.type==="tool")continue;
+    const c=sim.cong[a+">"+b]||0,[x1,y1]=W2S(A.x,A.y),[x2,y2]=W2S(B.x,B.y);
+    ctx.strokeStyle=c>0.45?`rgba(255,77,77,${0.4+c*0.6})`:c>0.2?"rgba(255,180,60,.7)":"rgba(90,155,213,.4)";
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+  for(const n of g.nodes){const[x,y]=W2S(n.x,n.y);
+    if(n.type==="tool"){ctx.fillStyle="#8a94a6";const s=12*cam.z;ctx.fillRect(x-s/2,y-s/2,s,s);}
+    else if(n.type==="stocker"){ctx.fillStyle="#1A73E8";const s=24*cam.z;ctx.fillRect(x-s/2,y-s/2,s,s);}
+    else if(n.type==="buffer"){ctx.fillStyle="#2b9b5e";const s=10*cam.z;ctx.fillRect(x-s/2,y-s/2,s,s);}
+    else if(n.type==="branch"||n.type==="merge"){ctx.fillStyle="#ffd23f";ctx.beginPath();ctx.arc(x,y,4*cam.z,0,7);ctx.fill();}}
+  for(const v of sim.vehicles){const[x,y]=W2S(v.x,v.y),r=Math.max(4,6*cam.z);
+    ctx.fillStyle=STATE_COLOR[v.state]||"#fff";ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+    if(v.lot){ctx.fillStyle="#fff";ctx.fillRect(x-2,y-2,4,4);}
+    if(v.state===STATE.WAIT||v.state===STATE.CONG||v.state===STATE.RECOV){ctx.strokeStyle="#fff";ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,r+2,0,7);ctx.stroke();}}}
+let R3={built:false,theta:0.9,phi:1.0,rad:950,tx:500,tz:310};
+function build3D(){const cvs=$("three");
+  R3.rend=new THREE.WebGLRenderer({canvas:cvs,antialias:true});R3.rend.setPixelRatio(Math.min(devicePixelRatio,2));
+  R3.scene=new THREE.Scene();R3.scene.background=new THREE.Color(0x0e1320);
+  R3.cam=new THREE.PerspectiveCamera(55,cvs.clientWidth/Math.max(cvs.clientHeight,1),1,6000);
+  const g=sim.g;const fl=new THREE.Mesh(new THREE.PlaneGeometry(g.W+200,g.H+200),new THREE.MeshStandardMaterial({color:0x0d1526}));
+  fl.rotation.x=-Math.PI/2;fl.position.set(g.W/2,0,g.H/2);R3.scene.add(fl);
+  for(const a in g.adj)for(const b of g.adj[a]){const A=g.byId[a],B=g.byId[b];if(A.type==="tool"||B.type==="tool")continue;
+    const L=dist(A,B);const m=new THREE.Mesh(new THREE.CylinderGeometry(2,2,L,6),new THREE.MeshStandardMaterial({color:0x3b496b}));
+    m.position.set((A.x+B.x)/2,62,(A.y+B.y)/2);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(B.x-A.x,0,B.y-A.y).normalize());R3.scene.add(m);}
+  for(const n of g.nodes){let m;if(n.type==="tool")m=new THREE.Mesh(new THREE.BoxGeometry(24,32,18),new THREE.MeshStandardMaterial({color:0x8a94a6}));
+    else if(n.type==="stocker")m=new THREE.Mesh(new THREE.BoxGeometry(44,74,44),new THREE.MeshStandardMaterial({color:0x1A73E8}));else continue;
+    m.position.set(n.x,n.type==="stocker"?37:16,n.y);R3.scene.add(m);}
+  R3.vmesh=sim.vehicles.map(()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(15,9,11),new THREE.MeshStandardMaterial({color:0x34c77b}));m.position.y=60;R3.scene.add(m);return m;});
+  R3.scene.add(new THREE.AmbientLight(0xffffff,.8));const d=new THREE.DirectionalLight(0xffffff,.6);d.position.set(300,600,200);R3.scene.add(d);
+  R3.built=true;cam3d();}
+function cam3d(){const cvs=$("three");R3.rend.setSize(cvs.clientWidth,cvs.clientHeight,false);R3.cam.aspect=cvs.clientWidth/Math.max(cvs.clientHeight,1);R3.cam.updateProjectionMatrix();
+  R3.cam.position.set(R3.tx+R3.rad*Math.sin(R3.phi)*Math.cos(R3.theta),R3.rad*Math.cos(R3.phi),R3.tz+R3.rad*Math.sin(R3.phi)*Math.sin(R3.theta));R3.cam.lookAt(R3.tx,0,R3.tz);}
+function draw3D(){if(!R3.built)build3D();
+  sim.vehicles.forEach((v,i)=>{const m=R3.vmesh[i];if(m){m.position.set(v.x,60,v.y);m.material.color.set(STATE_COLOR[v.state]||"#fff");}});
+  R3.rend.render(R3.scene,R3.cam);}
+
+/* ===== 7. KPI / 비교 ===== */
+function renderKPI(){const m=sim.metrics();
+  const cards=[["Throughput",m.throughput.toFixed(1)+"/min",""],["Completed",m.done,"good"],["Avg Cycle",m.cycle.toFixed(0)+"s",""],
+    ["Avg Delivery",m.deliv.toFixed(0)+"s",""],["Avg Waiting",m.wait.toFixed(0)+"s",m.wait>20?"warn":""],
+    ["Vehicle Util",(m.util*100).toFixed(0)+"%","good"],["Empty Travel",(m.empty*100).toFixed(0)+"%",m.empty>0.55?"warn":""],
+    ["Congestion",(m.cong*100).toFixed(0)+"%",m.cong>0.3?"warn":""],["Deadlocks",m.deadlock,m.deadlock>0?"warn":""],
+    ["Avg Queue",m.queue.toFixed(1),m.queue>10?"warn":""]];
+  $("kpis").innerHTML=cards.map(c=>`<div class="kpi ${c[2]}"><div class="v">${c[1]}</div><div class="l">${c[0]}</div></div>`).join("");}
+let records=[];
+function recordRun(){const m=sim.metrics(),c=sim.cfg;
+  records.push({algo:`${c.dispatch}/${c.path}/${c.traffic}`,tp:m.throughput,cyc:m.cycle,wait:m.wait,util:m.util,cong:m.cong,dl:m.deadlock});
+  if(records.length>8)records.shift();
+  const rows=records.map(r=>`<tr><td>${r.algo}</td><td>${r.tp.toFixed(1)}</td><td>${r.cyc.toFixed(0)}</td><td>${r.wait.toFixed(0)}</td><td>${(r.util*100).toFixed(0)}%</td><td>${(r.cong*100).toFixed(0)}%</td><td>${r.dl}</td></tr>`).join("");
+  $("cmpBox").innerHTML=`<table class="cmp"><tr><th>D/P/T</th><th>TP</th><th>Cyc</th><th>Wait</th><th>Util</th><th>Cong</th><th>DL</th></tr>${rows}</table>
+    <div class="algo-note">동일 조건에서 알고리즘만 바꿔 실행→기록하면 KPI 차이를 비교할 수 있습니다.</div>`;}
+
+/* ===== 8. 메인 루프 / 입력 ===== */
+function cfgFromUI(){return{vehicles:+$("vehicles").value,lotRate:+$("lotRate").value,genMode:$("genMode").value,
+  bays:+$("bays").value,toolsPerBay:+$("toolsPerBay").value,dispatch:$("dispatch").value,path:$("path").value,
+  traffic:$("traffic").value,vSpeed:90,simSpeed:+$("simSpeed").value};}
+function rebuild(){sim=new Sim(cfgFromUI());R3.built=false;$("three").style.display="none";fit();renderKPI();}
+let last=0;
+function loop(ts){raf=requestAnimationFrame(loop);last=ts;
+  if(playing){const steps=sim.cfg.simSpeed;for(let i=0;i<steps;i++)sim.step(0.1);}
+  if(view2D)draw2D();else draw3D();renderKPI();}
+function setView(){view2D=!view2D;$("cv").style.display=view2D?"block":"none";$("three").style.display=view2D?"none":"block";
+  $("viewBtn").textContent=view2D?"🧊 3D 전환":"🗺 2D 전환";$("viewBtn").classList.toggle("on",!view2D);
+  if(!view2D){if(!R3.built)build3D();cam3d();}}
+function legend(){$("legend").innerHTML=Object.entries({Idle:"대기/주차",MoveToPickup:"픽업 이동",LoadedMove:"운반 중",Waiting:"대기(차단)",Congestion:"혼잡",Recovery:"데드락 회복"}).map(([k,v])=>`<div><b style="background:${STATE_COLOR[k]}"></b>${v}</div>`).join("");}
+
+$("playBtn").onclick=()=>{playing=!playing;$("playBtn").textContent=playing?"⏸ 일시정지":"▶ 시작";$("playBtn").classList.toggle("idle",!playing);};
+$("stepBtn").onclick=()=>{for(let i=0;i<5;i++)sim.step(0.1);view2D?draw2D():draw3D();renderKPI();};
+$("resetBtn").onclick=()=>{playing=false;$("playBtn").textContent="▶ 시작";$("playBtn").classList.add("idle");rebuild();};
+$("viewBtn").onclick=setView;$("recordBtn").onclick=recordRun;
+["vehicles","lotRate","bays","toolsPerBay"].forEach(id=>$(id).oninput=e=>{$({vehicles:"vN",lotRate:"vL",bays:"vB",toolsPerBay:"vT"}[id]).textContent=e.target.value;rebuild();});
+$("simSpeed").oninput=e=>{$("vS").textContent=e.target.value+"×";sim.cfg.simSpeed=+e.target.value;};
+$("genMode").onchange=()=>sim.cfg.genMode=$("genMode").value;
+["dispatch","path","traffic"].forEach(id=>$(id).onchange=()=>{sim.cfg[id]=$(id).value;updateAlgoNote();});
+cv.onmousedown=e=>{drag=true;lx=e.clientX;ly=e.clientY;};
+addEventListener("mouseup",()=>drag=false);
+addEventListener("mousemove",e=>{if(!drag)return;if(view2D){cam.x+=e.clientX-lx;cam.y+=e.clientY-ly;}else{R3.theta+=(e.clientX-lx)*0.008;R3.phi=Math.max(0.2,Math.min(1.4,R3.phi+(e.clientY-ly)*0.008));cam3d();}lx=e.clientX;ly=e.clientY;});
+cv.onwheel=e=>{e.preventDefault();cam.z*=e.deltaY<0?1.1:0.9;};
+$("three").addEventListener("wheel",e=>{e.preventDefault();R3.rad=Math.max(250,Math.min(2800,R3.rad*(e.deltaY<0?0.9:1.1)));cam3d();},{passive:false});
+$("three").addEventListener("mousedown",e=>{drag=true;lx=e.clientX;ly=e.clientY;});
+addEventListener("resize",()=>{fit();if(!view2D&&R3.built)cam3d();});
+
+updateAlgoNote();legend();rebuild();last=performance.now();loop(last);
+</script>
+</body>
+</html>
