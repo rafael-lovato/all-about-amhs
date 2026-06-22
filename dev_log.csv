@@ -1,0 +1,8 @@
+date,phase,tool_used,action,result,feedback,improvement
+2026-06-22,Phase 0,Cowork,"프로젝트 총괄 착수 · 5개 시트 구조(articles/concepts/quiz_bank/dev_log/glossary) 정의","STEP 1 스키마 확정","스키마를 config.js와 1:1로 맞춰 fetch 매칭 보장","시트 탭 이름을 영문 고정으로 표준화"
+2026-06-22,Phase 1,Chrome,"SK하이닉스 뉴스룸 6개 검색어(AMHS/OHT/자동반송/스마트팩토리/물류/반송 등) 크롤링","OHT-CPS·스마트팩토리·Physical AI 등 실제 기사 확보","'AMHS/자동반송' 직접 매칭 기사 희소 → 검색어 변경 재시도","SEMI 표준 등 기술 레퍼런스로 보완 수집(가이드 Phase1 보완크롤링)"
+2026-06-22,Phase 1,Chrome,"공식 IT(AMHS) 직무기술서(JD) 확보·반영","4대 업무(구축/제어/SW개발/운영) 데이터 매핑","뉴스룸 외부 자료도 수집 가능 확인","JD 문장을 articles·quiz·자소서에 직접 반영"
+2026-06-22,Phase 2,Cowork,"데이터 정제 · 카테고리 6분류 표준화 · 퀴즈 생성","articles25 · concepts30 · quiz30 · glossary55 CSV","난이도/카테고리 균형 점검 필요","퀴즈 카테고리 분포·난이도 자동 검증 스크립트 실행"
+2026-06-22,Phase 3,Code,"정적 웹앱 7파일 개발(HTML/CSS/JS/Three.js r128)","3탭 통합 · A* 경로탐색 Vanilla JS 직접 구현","Sheets 미설정 시 빈 화면 위험","4종 CSV를 fallback-data.js로 내장해 무중단 동작"
+2026-06-22,Phase 4,Cowork,"하네스 9항목 자동 검증 + Self-feedback 채점","A* 5/5 엣지케이스 통과 · 데이터 무결성 0오류","3D가 모바일/백그라운드에서 부하","탭 비활성 시 렌더 루프 pause·중복 바인딩 가드 추가"
+2026-06-22,Phase 5,Code,"README · 상대경로 확인 · GitHub Pages 배포 준비 · 자소서 문구","배포 체크리스트·자소서 900자 완성","gviz 라이브 연동은 시트 공유설정 필요","README에 '뷰어 공유' 설정 안내 명시"
