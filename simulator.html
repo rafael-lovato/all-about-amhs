@@ -93,10 +93,20 @@ table.cmp th{background:var(--bg);color:var(--sky);}
         <option value="static">Static Rule</option><option value="reservation" selected>Reservation Based</option>
         <option value="predictive">Predictive</option></select></div>
       <div class="algo-note" id="algoNote"></div>
+      <div class="algo-note" id="deadInfo" style="border-top:0;padding-top:4px;color:#ff4d4d"></div>
     </div>
 
     <div class="sec">
-      <h3>실험 결과 비교</h3>
+      <h3>실험(A/B) 자동 비교</h3>
+      <div class="row" style="font-size:11px;color:var(--soft)">A=현재 설정, B=아래 설정 (차량·λ·FAB 공통). 각 400초 헤드리스 실행 후 델타 비교.</div>
+      <div class="row"><label>B · Dispatching</label><select id="bDisp"><option value="fifo">FIFO</option><option value="nvf">Nearest</option><option value="llv">Least Loaded</option><option value="eav">Earliest</option></select></div>
+      <div class="row"><label>B · Path</label><select id="bPath"><option value="shortest">Shortest</option><option value="dijkstra">Dijkstra</option><option value="astar">A*</option><option value="dynamic">Dynamic</option></select></div>
+      <div class="row"><label>B · Traffic</label><select id="bTraf"><option value="static">Static</option><option value="reservation" selected>Reservation</option><option value="predictive">Predictive</option></select></div>
+      <button class="btn" id="abBtn" style="width:100%;background:var(--teal)">⚗ A/B 실험 실행</button>
+      <div id="abOut" style="font-size:11.5px;color:var(--soft);margin-top:8px;line-height:1.7"></div>
+    </div>
+    <div class="sec">
+      <h3>실험 결과 기록</h3>
       <div id="cmpBox"><span class="tag">아직 기록 없음 — ▶ 실행 후 "결과 기록"</span></div>
     </div>
   </aside>
@@ -325,7 +335,7 @@ class Sim{
     for(const v of blocked){const nx=v.path[v.pIdx+1];const w=occAt[nx];if(w&&w!==v.id)waitFor[v.id]=w;}
     for(const s of Object.keys(waitFor)){let cur=+s,steps=0,seen=new Set();
       while(cur!=null&&!seen.has(cur)&&steps++<blocked.length+2){seen.add(cur);cur=waitFor[cur];}
-      if(cur!=null&&seen.has(cur)){this.kpi.deadlock++;this.deadlockFlash=1.0;
+      if(cur!=null&&seen.has(cur)){this.kpi.deadlock++;this.deadlockFlash=1.0;const _vn=this.vehicles.find(x=>x.id===+s);this.lastDeadlock={t:this.t.toFixed(0),ids:[...seen],node:_vn?_vn.path[_vn.pIdx+1]:null};
         const victim=this.vehicles.find(x=>x.id===Math.max(...seen));
         if(victim){victim.state=STATE.RECOV;victim.stuck=0;
           const buf=this.g.buffers[0];if(buf)this.routeTo(victim,buf.id,victim.lot?STATE.LOADED:STATE.TOPICK);}
@@ -427,7 +437,7 @@ function rebuild(){sim=new Sim(cfgFromUI());R3.built=false;$("three").style.disp
 let last=0;
 function loop(ts){raf=requestAnimationFrame(loop);last=ts;
   if(playing){const steps=sim.cfg.simSpeed;for(let i=0;i<steps;i++)sim.step(0.1);}
-  if(view2D)draw2D();else draw3D();renderKPI();}
+  if(view2D)draw2D();else draw3D();renderKPI();renderDeadInfo();}
 function setView(){view2D=!view2D;$("cv").style.display=view2D?"block":"none";$("three").style.display=view2D?"none":"block";
   $("viewBtn").textContent=view2D?"🧊 3D 전환":"🗺 2D 전환";$("viewBtn").classList.toggle("on",!view2D);
   if(!view2D){if(!R3.built)build3D();cam3d();}}
@@ -437,6 +447,16 @@ $("playBtn").onclick=()=>{playing=!playing;$("playBtn").textContent=playing?"⏸
 $("stepBtn").onclick=()=>{for(let i=0;i<5;i++)sim.step(0.1);view2D?draw2D():draw3D();renderKPI();};
 $("resetBtn").onclick=()=>{playing=false;$("playBtn").textContent="▶ 시작";$("playBtn").classList.add("idle");rebuild();};
 $("viewBtn").onclick=setView;$("recordBtn").onclick=recordRun;
+function runHeadless(cfg,steps){const s=new Sim(cfg);for(let i=0;i<steps;i++)s.step(0.1);return s.metrics();}
+function fmtDelta(a,b,lower){const base=Math.abs(a)<1e-6?(Math.abs(b)<1e-6?0:100):((b-a)/Math.abs(a)*100);const good=lower?base<0:base>0;const col=Math.abs(base)<1?"#9aa8c2":good?"#34c77b":"#ff4d4d";return `<span style="color:${col};font-weight:700">${base>=0?"+":""}${base.toFixed(0)}%</span>`;}
+function renderDeadInfo(){const el=$("deadInfo");if(!el)return;const d=sim.lastDeadlock;el.innerHTML=d?`🔒 <b>Deadlock</b> @${d.t}s · 관련 ${d.ids.map(i=>"V"+i).join(",")} · 경합노드 ${d.node||"-"} → 희생차량 버퍼 우회로 회복`:"";}
+if($("abBtn"))$("abBtn").onclick=()=>{$("abOut").innerHTML="실행 중…";setTimeout(()=>{const base=cfgFromUI();const A=runHeadless({...base},4000);const B=runHeadless({...base,dispatch:$("bDisp").value,path:$("bPath").value,traffic:$("bTraf").value},4000);
+  $("abOut").innerHTML=`<b>A</b> ${base.dispatch}/${base.path}/${base.traffic} vs <b>B</b> ${$("bDisp").value}/${$("bPath").value}/${$("bTraf").value}<br>
+  Throughput ${A.throughput.toFixed(1)}→${B.throughput.toFixed(1)} ${fmtDelta(A.throughput,B.throughput,false)}<br>
+  Avg Delivery ${A.deliv.toFixed(0)}s→${B.deliv.toFixed(0)}s ${fmtDelta(A.deliv,B.deliv,true)}<br>
+  Avg Waiting ${A.wait.toFixed(0)}s→${B.wait.toFixed(0)}s ${fmtDelta(A.wait,B.wait,true)}<br>
+  Congestion ${(A.cong*100).toFixed(0)}%→${(B.cong*100).toFixed(0)}% ${fmtDelta(A.cong,B.cong,true)}<br>
+  Deadlock ${A.deadlock}→${B.deadlock}`;},30);};
 ["vehicles","lotRate","bays","toolsPerBay"].forEach(id=>$(id).oninput=e=>{$({vehicles:"vN",lotRate:"vL",bays:"vB",toolsPerBay:"vT"}[id]).textContent=e.target.value;rebuild();});
 $("simSpeed").oninput=e=>{$("vS").textContent=e.target.value+"×";sim.cfg.simSpeed=+e.target.value;};
 $("genMode").onchange=()=>sim.cfg.genMode=$("genMode").value;
@@ -449,6 +469,7 @@ $("three").addEventListener("wheel",e=>{e.preventDefault();R3.rad=Math.max(250,M
 $("three").addEventListener("mousedown",e=>{drag=true;lx=e.clientX;ly=e.clientY;});
 addEventListener("resize",()=>{fit();if(!view2D&&R3.built)cam3d();});
 
+(function applyPreset(){const q=new URLSearchParams(location.search);const map={d:"dispatch",p:"path",t:"traffic",veh:"vehicles",lot:"lotRate",gen:"genMode",bay:"bays",tool:"toolsPerBay"};const lbl={vehicles:"vN",lotRate:"vL",bays:"vB",toolsPerBay:"vT"};for(const k in map){if(q.has(k)){const el=$(map[k]);if(el){el.value=q.get(k);if(lbl[map[k]]&&$(lbl[map[k]]))$(lbl[map[k]]).textContent=q.get(k);}}}})();
 updateAlgoNote();legend();rebuild();last=performance.now();loop(last);
 </script>
 </body>

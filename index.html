@@ -341,6 +341,7 @@ body {
       <button data-sv="concepts">개념 사전</button>
       <button data-sv="quiz">퀴즈</button>
       <button data-sv="flash">플래시카드</button>
+      <button data-sv="learn">🎓 학습 센터</button>
     </div>
 
     <div class="subview active" id="sv-cards">
@@ -370,6 +371,8 @@ body {
       <p class="section-sub">카드를 탭하면 한국어 ↔ 영어/정의가 뒤집힙니다.</p>
       <div id="flash-area"></div>
     </div>
+
+    <div class="subview" id="sv-learn"></div>
   </section>
 
   <!-- ===== Tab 2: Control 실습 (FAB OHT 디지털 트윈 시뮬레이터) ===== -->
@@ -2073,6 +2076,7 @@ window.StudyTab = (function () {
       $("#sv-"+b.dataset.sv).classList.add("active");
       if (b.dataset.sv==="quiz"){ renderQuizStats(); if(!quizPool.length) startQuiz(); }
       if (b.dataset.sv==="flash" && !flashPool.length) startFlash();
+      if (b.dataset.sv==="learn" && window.LearnTab) window.LearnTab.init();
     }));
   }
 
@@ -2084,6 +2088,394 @@ window.StudyTab = (function () {
     initSubtabs();
     $("#card-search").addEventListener("input", (e)=>{ articleSearch = e.target.value; renderCards(); });
     $("#modal-overlay").addEventListener("click",(e)=>{ if(e.target.id==="modal-overlay") e.target.classList.remove("open"); });
+  }
+  return { init };
+})();
+
+</script>
+  <script>
+/* =========================================================================
+ * learn.js — AMHS 학습 센터 (Learning Center)
+ * 반도체 FAB 물류 제어 교육 플랫폼: Digital Twin · FAB 구조 · OHT 상태머신 ·
+ * Lot 흐름 · Dispatching · Path Planning · Traffic Control · Congestion ·
+ * Deadlock · KPI Academy · Experiment Lab + 인터랙티브 미니 데모
+ * ========================================================================= */
+window.LearnTab = (function () {
+  "use strict";
+  const $ = (s, r = document) => r.querySelector(s);
+  const SIM_URL = "simulator.html";   // 같은 레포 루트
+  let built = false;
+
+  /* ---------- 스타일 주입(자체 완결) ---------- */
+  function injectStyle() {
+    if ($("#learn-style")) return;
+    const s = document.createElement("style"); s.id = "learn-style";
+    s.textContent = `
+    .lc-wrap{display:grid;grid-template-columns:208px 1fr;gap:16px;}
+    .lc-nav{position:sticky;top:120px;align-self:start;display:flex;flex-direction:column;gap:3px;max-height:78vh;overflow:auto;}
+    .lc-nav button{text-align:left;padding:8px 11px;border:none;border-radius:9px;background:transparent;color:var(--text-soft);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+    .lc-nav button:hover{background:var(--surface-2);color:var(--navy);}
+    .lc-nav button.active{background:var(--navy);color:#fff;}
+    .lc-body{min-width:0;}
+    .lc-sec{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);}
+    .lc-sec h2{font-size:21px;color:var(--navy);margin-bottom:6px;}
+    [data-theme=dark] .lc-sec h2{color:var(--sky);}
+    .lc-sec h3{font-size:15px;margin:18px 0 6px;}
+    .lc-sec p{font-size:14px;line-height:1.75;margin:6px 0;color:var(--text);}
+    .lc-sec .lead{color:var(--text-soft);font-size:13px;margin-bottom:10px;}
+    .lc-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin:12px 0;}
+    .lc-card{border:1px solid var(--border);border-radius:11px;padding:13px 15px;background:var(--surface-2);}
+    .lc-card h4{font-size:14px;margin-bottom:5px;color:var(--navy);}
+    [data-theme=dark] .lc-card h4{color:var(--sky);}
+    .lc-card ul{margin:4px 0 0 16px;font-size:12.5px;line-height:1.65;color:var(--text-soft);}
+    .lc-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;color:#fff;margin-bottom:6px;}
+    .lc-kv{font-size:12.5px;line-height:1.7;}
+    .lc-kv b{color:var(--navy);} [data-theme=dark] .lc-kv b{color:var(--sky);}
+    .lc-note{border-left:3px solid var(--orange);background:var(--surface-2);padding:9px 13px;border-radius:0 9px 9px 0;font-size:13px;margin:12px 0;}
+    .lc-demo{border:1px dashed var(--border);border-radius:12px;padding:14px;margin:14px 0;background:var(--surface-2);}
+    .lc-demo canvas{width:100%;background:#0e1320;border-radius:9px;display:block;}
+    .lc-demo .ctl{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+    .lc-demo .ctl button{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+    .lc-demo .ctl button.sel{background:var(--orange);color:#fff;border-color:transparent;}
+    .lc-demo .out{font-size:12.5px;color:var(--text-soft);line-height:1.7;}
+    .lc-state{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+    .lc-state span{font-size:11.5px;padding:5px 10px;border-radius:8px;color:#fff;font-weight:600;}
+    .lc-link{display:inline-block;margin-top:10px;padding:8px 14px;border-radius:9px;background:var(--orange);color:#fff;text-decoration:none;font-size:12.5px;font-weight:700;}
+    .lc-table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0;}
+    .lc-table th,.lc-table td{border:1px solid var(--border);padding:6px 9px;text-align:left;}
+    .lc-table th{background:var(--surface-2);color:var(--navy);}
+    [data-theme=dark] .lc-table th{color:var(--sky);}
+    @media(max-width:720px){.lc-wrap{grid-template-columns:1fr;}.lc-nav{flex-direction:row;overflow-x:auto;position:static;}}
+    `;
+    document.head.appendChild(s);
+  }
+
+  const C = { OHT:"#0C4DA1", AMR:"#5B9BD5", MES:"#00A3A1", SW:"#FF6B00", SF:"#7C4DFF", ETC:"#8A94A6" };
+
+  /* ===================== 섹션 콘텐츠 ===================== */
+  const SECTIONS = [
+    { id:"dt", title:"① 디지털 트윈 개요", html:()=>`
+      <h2>Digital Twin & 왜 OHT 시뮬레이션인가</h2>
+      <p class="lead">실제 공장을 건드리지 않고 가상에서 실험·검증하는 것이 디지털 트윈의 핵심입니다.</p>
+      <h3>디지털 트윈이란?</h3>
+      <p>물리적 설비·공정·시스템을 <b>가상 공간에 동일하게 복제</b>하고, 실시간 데이터로 동기화해 분석·예측·최적화하는 기술입니다. 제조업에서는 설비 고장 예측(예지보전), 공정 최적화, 신규 라인 사전 검증에 쓰입니다.</p>
+      <h3>반도체 FAB에서의 활용</h3>
+      <p>반도체 FAB은 <b>수백 대의 OHT</b>, 수천 개의 Lot, 수 km의 Rail Network가 동시에 운영됩니다. 새 디스패칭·라우팅 알고리즘을 실제 라인에 바로 적용하면 생산 차질·교착(Deadlock)·수율 손실 위험이 큽니다.</p>
+      <div class="lc-note">그래서 <b>시뮬레이션 기반 검증</b>이 필수입니다. 알고리즘을 가상에서 수백 번 실험해 KPI 영향을 확인한 뒤에야 실제 적용합니다. 이 플랫폼이 바로 그 축소판입니다.</div>
+      <h3>이 플랫폼의 목표</h3>
+      <p>단순히 OHT가 움직이는 것을 보는 것이 아니라 — <b>왜</b> 특정 알고리즘이 더 효율적인지, <b>왜</b> 병목과 교착이 생기는지, 차량 수·발생률을 바꾸면 KPI가 <b>어떻게</b> 달라지는지를 직접 실험하고 이해하는 것입니다.</p>
+      <a class="lc-link" href="${SIM_URL}" target="_blank" rel="noopener">🎮 디지털 트윈 시뮬레이터 열기 ↗</a>` },
+
+    { id:"fab", title:"② 실제 FAB 구조", html:()=>`
+      <h2>Real Semiconductor FAB Architecture</h2>
+      <p class="lead">시뮬레이터 화면의 각 요소가 실제 FAB의 무엇을 의미하는지 연결해 설명합니다.</p>
+      <div class="lc-grid">
+        ${[["Bay","공정 장비(Process Tool)들이 모인 생산 구역. 시뮬레이터의 가로 라인 = 하나의 Bay(인트라베이)."],
+           ["Inter Bay","Bay와 Bay를 잇는 물류 간선. 시뮬레이터의 외곽 루프가 인터베이."],
+           ["Stocker","Wafer(FOUP)를 임시 보관·버퍼링하는 자동 창고. 파란 박스."],
+           ["Process Tool","식각·증착·노광 등 실제 공정 장비. 회색 박스."],
+           ["Load Port","Tool 전면에서 FOUP를 싣고 내리는 인터페이스(픽업/드롭 지점)."],
+           ["Rail Network","OHT가 주행하는 천장 레일. 노드+간선 그래프로 모델링."],
+           ["Branch Point","경로가 갈라지는 분기점(노랑). 충돌 제어 대상."],
+           ["Merge Point","경로가 합류하는 지점(노랑). Merge Conflict 발생 지점."],
+           ["Buffer Zone","혼잡 시 차량이 잠시 대기·우회하는 구역(데드락 회복에 사용)."]]
+          .map(([t,d])=>`<div class="lc-card"><h4>${t}</h4><p style="font-size:12.5px;color:var(--text-soft);margin:0">${d}</p></div>`).join("")}
+      </div>
+      <div class="lc-note">시뮬레이터의 <b>파란 영역=Stocker, 회색 사각=Process Tool, 노란 점=분기/합류, 라인=Rail</b> 입니다. 단방향 레일로 설계해 추월 불가·충돌 방지를 현실적으로 모사합니다.</div>` },
+
+    { id:"sm", title:"③ OHT 상태머신", html:()=>`
+      <h2>OHT State Machine</h2>
+      <p class="lead">각 OHT는 Lot을 운반하며 아래 상태를 순환합니다. 시뮬레이터에서 색으로 표시됩니다.</p>
+      <div class="lc-state">
+        ${[["Idle","대기/주차","#34c77b"],["Dispatch","작업 할당","#3b9bff"],["MoveToPickup","픽업 이동","#3b9bff"],["Pickup","Lot 적재","#3b9bff"],["LoadedMove","운반","#FF6B00"],["Delivery","전달","#FF6B00"],["Waiting","대기(차단)","#ffd23f"],["Congestion","정체","#ff4d4d"],["Recovery","복구","#b06bff"]]
+          .map(([s,k,c])=>`<span style="background:${c}">${s} · ${k}</span>`).join("")}
+      </div>
+      ${stateDiagramSVG()}
+      <h3>상태 전이 흐름</h3>
+      <p>Idle → (작업 발생) Dispatch → MoveToPickup → Pickup → LoadedMove → Delivery → Idle. 이동 중 앞차/교차점에 막히면 <b>Waiting</b>, 구간이 과밀하면 <b>Congestion</b>, 상호 점유로 교착되면 감지 후 <b>Recovery</b>(버퍼 우회)로 빠집니다.</p>` },
+
+    { id:"lot", title:"④ Wafer Lot 흐름", html:()=>`
+      <h2>Wafer Lot Flow & 발생 모델</h2>
+      <p class="lead">실제 FAB은 OHT 중심이 아니라 Lot 중심입니다. Lot이 공정을 따라 흐릅니다.</p>
+      <div class="lc-note" style="text-align:center;font-weight:700">Tool A → Tool B → Tool C → Stocker</div>
+      <p>각 공정이 끝나면 다음 Tool로 반송 요청(Job)이 생성되고, MCS가 OHT를 디스패칭해 Lot을 운반합니다. 시뮬레이터는 Tool 간 무작위 O-D로 이 흐름을 모사합니다.</p>
+      <h3>Lot 발생 모델 비교</h3>
+      <table class="lc-table"><tr><th>모델</th><th>설명</th><th>KPI 영향</th></tr>
+        <tr><td><b>Fixed Interval</b></td><td>일정 주기마다 발생</td><td>부하 예측 쉬움·변동 작음 → 안정적이나 비현실적</td></tr>
+        <tr><td><b>Random(균등)</b></td><td>주기를 무작위로 흔듦</td><td>변동↑ → 일시적 대기열 발생</td></tr>
+        <tr><td><b>Poisson</b></td><td>지수분포 도착간격(실제 도착에 가장 근접)</td><td>버스트 발생 → 병목·대기열 현실적으로 재현</td></tr>
+      </table>
+      <p>시뮬레이터에서 발생 모델을 바꿔 같은 λ에서도 대기열(Queue)과 Cycle Time이 달라지는 것을 확인하세요.</p>
+      <a class="lc-link" href="${SIM_URL}?gen=poisson&lot=30" target="_blank" rel="noopener">🎮 Poisson λ30으로 실험 ↗</a>` },
+
+    { id:"disp", title:"⑤ Dispatching 러닝센터", html:()=>`
+      <h2>Dispatching Algorithm Learning Center</h2>
+      <p class="lead">대기 중인 Lot을 <b>어느 차량</b>에 배정할지 결정하는 전략입니다.</p>
+      <div class="lc-grid">
+        ${dispCard("FIFO","요청이 들어온 순서대로(가장 오래된 Lot 우선) 처리.",["구현 단순·공정성↑"],["혼잡 시 먼 차량 배정→이동거리·대기↑"],"저부하 단순 라인",C.SW)}
+        ${dispCard("Nearest Vehicle First","픽업지에 가장 가까운 유휴 차량 배정.",["Empty travel↓","응답 빠름"],["특정 구역 차량 편중→불균형"],"중·고부하 일반 FAB",C.OHT)}
+        ${dispCard("Earliest Available","가장 빨리 가용해질 차량을 예측 배정.",["대기열 처리속도↑"],["가용시점 예측 오차에 민감"],"고부하 연속 발생",C.MES)}
+        ${dispCard("Least Loaded","누적 작업이 가장 적은 차량 배정.",["차량 부하 균형↑"],["거리 미고려→경로 비효율"],"부하 평탄화 중요 라인",C.SF)}
+      </div>
+      <h3>🔬 인터랙티브: 알고리즘별 차량 선택 비교</h3>
+      <div class="lc-demo" id="dispDemo">
+        <div class="out" style="margin-bottom:6px">픽업 지점(★)에 대해 각 알고리즘이 어떤 차량을 고르는지 비교합니다. 차량 옆 숫자=누적작업.</div>
+        <canvas id="dispCv" height="220"></canvas>
+        <div class="ctl" id="dispCtl"></div>
+        <div class="out" id="dispOut"></div>
+      </div>
+      <a class="lc-link" href="${SIM_URL}?d=fifo" target="_blank" rel="noopener">🎮 시뮬레이터에서 FIFO vs NVF 직접 비교 ↗</a>` },
+
+    { id:"path", title:"⑥ Path Planning 러닝센터", html:()=>`
+      <h2>Path Planning Learning Center</h2>
+      <p class="lead">출발지에서 목적지까지 <b>어떤 경로</b>로 갈지 계산하는 전략입니다.</p>
+      <div class="lc-grid">
+        ${dispCard("Shortest (Hop)","간선 수(hop)가 최소인 경로.",["계산 매우 빠름"],["실제 거리·혼잡 무시"],"균일 격자·교육",C.SW)}
+        ${dispCard("Dijkstra","간선 거리 가중 최단경로(전방향 탐색).",["최적 거리 보장"],["휴리스틱 없어 탐색량↑"],"정적 거리 최적화",C.OHT)}
+        ${dispCard("A*","거리 g + 휴리스틱 h(목표까지 직선거리)로 목표 지향 탐색.",["빠르고 최적","탐색량↓"],["정적 가중치만 반영"],"대부분 FAB 기본",C.MES)}
+        ${dispCard("Dynamic Routing","실시간 혼잡도를 간선 가중치에 반영해 우회.",["병목 회피·혼잡 완화"],["계산비용↑·경로 진동 가능"],"고혼잡 피크",C.SF)}
+      </div>
+      <h3>🔬 인터랙티브: 경로 탐색 시각화</h3>
+      <div class="lc-demo" id="pathDemo">
+        <div class="out" style="margin-bottom:6px">격자에서 알고리즘별 <b>탐색 범위(옅은 색)</b>와 <b>최종 경로(주황)</b>를 비교하세요. 칸 클릭=장애물 토글.</div>
+        <canvas id="pathCv" height="240"></canvas>
+        <div class="ctl" id="pathCtl"></div>
+        <div class="out" id="pathOut"></div>
+      </div>
+      <div class="lc-note">A*는 Dijkstra보다 <b>탐색한 칸 수가 적으면서</b> 같은 최단경로를 찾습니다 — 휴리스틱이 목표 방향으로 탐색을 유도하기 때문입니다.</div>` },
+
+    { id:"traffic", title:"⑦ Traffic Control 러닝센터", html:()=>`
+      <h2>Traffic Control Learning Center</h2>
+      <p class="lead">분기·합류점에서 차량 충돌을 막는 제어 방식입니다.</p>
+      <div class="lc-grid">
+        ${dispCard("Static Rule","고정 우선순위(예: ID 우선)로 양보.",["단순·예측 가능"],["경쟁 심하면 기아(starvation)·비효율"],"저밀도 트래픽",C.SW)}
+        ${dispCard("Reservation Based","노드/구간을 시간 단위로 예약해 충돌 원천 차단.",["충돌·데드락↓","기아 없음"],["예약 오버헤드·다소 보수적"],"중밀도 표준",C.OHT)}
+        ${dispCard("Predictive","향후 교통량을 예측해 진입을 사전 조절(미터링).",["잼 예방·처리량 안정"],["예측 오차 시 과대기"],"고밀도 피크",C.SF)}
+      </div>
+      <p>시뮬레이터 고부하(차량↑, λ↑)에서 Static은 기아로 처리량이 급락하고, Reservation/Predictive는 충돌을 막아 안정적으로 처리합니다.</p>
+      <a class="lc-link" href="${SIM_URL}?veh=22&lot=45&t=static" target="_blank" rel="noopener">🎮 고부하 Static 관찰 ↗</a>` },
+
+    { id:"cong", title:"⑧ Congestion 분석", html:()=>`
+      <h2>Congestion Analysis Center</h2>
+      <p class="lead">혼잡은 처리량을 떨어뜨리는 가장 흔한 문제입니다. 원인과 영향을 이해합니다.</p>
+      <h3>발생 원인</h3>
+      <div class="lc-grid">
+        <div class="lc-card"><h4>Merge Conflict</h4><p style="font-size:12.5px;color:var(--text-soft);margin:0">두 흐름이 합류점에서 동시 진입을 다투며 한쪽이 대기.</p></div>
+        <div class="lc-card"><h4>Branch Conflict</h4><p style="font-size:12.5px;color:var(--text-soft);margin:0">분기점에서 진입 경쟁으로 후속 차량이 정체.</p></div>
+        <div class="lc-card"><h4>차량 과밀</h4><p style="font-size:12.5px;color:var(--text-soft);margin:0">단위 구간 밀도가 높아 안전거리 유지로 속도 저하.</p></div>
+        <div class="lc-card"><h4>비효율 Routing</h4><p style="font-size:12.5px;color:var(--text-soft);margin:0">모두 같은 간선을 쓰면 그 구간이 병목이 됨.</p></div>
+      </div>
+      <h3>Congestion Propagation(전파)</h3>
+      <p>한 구간이 막히면 뒤따르는 차량이 줄줄이 멈추고(Queue Formation), 그 대기열이 상류로 번지며 혼잡이 <b>전파</b>됩니다. → Throughput↓, Waiting↑, Cycle Time↑.</p>
+      <div class="lc-note">시뮬레이터의 <b>Heatmap</b>: 레일이 <span style="color:#5B9BD5">파랑(원활)</span> → <span style="color:#ffb43c">노랑(주의)</span> → <span style="color:#ff4d4d">빨강(병목)</span>으로 변합니다. 빨간 구간이 바로 병목입니다.</p>
+      <p><b>해결</b>: Dynamic Routing으로 혼잡 구간 우회, Predictive로 진입 미터링, 차량 수/발생률 조정.</p>
+      <a class="lc-link" href="${SIM_URL}?p=dynamic&veh=20&lot=40" target="_blank" rel="noopener">🎮 Dynamic Routing 혼잡 완화 관찰 ↗</a>` },
+
+    { id:"dead", title:"⑨ Deadlock 러닝센터", html:()=>`
+      <h2>Deadlock Learning Center</h2>
+      <p class="lead">서로가 서로의 자원을 기다리며 아무도 못 움직이는 상태입니다.</p>
+      <h3>Deadlock이란?</h3>
+      <p>차량 A가 차량 B의 점유 노드를 기다리고, B는 다시 A(또는 C→A)의 노드를 기다리는 <b>순환 대기(circular wait)</b>가 형성되면 누구도 진행할 수 없습니다.</p>
+      <h3>감지 & 회복</h3>
+      <p>각 차량의 "무엇을 기다리는가"로 <b>wait-for 그래프</b>를 만들고 <b>사이클</b>을 탐지합니다. 발견 시 사이클 내 한 차량을 희생(victim)으로 골라 <b>버퍼로 우회(Recovery)</b>시켜 고리를 끊습니다.</p>
+      <h3>🔬 인터랙티브: 데드락 발생→감지→회복</h3>
+      <div class="lc-demo" id="deadDemo">
+        <canvas id="deadCv" height="200"></canvas>
+        <div class="ctl"><button id="deadRun">▶ 시나리오 재생</button></div>
+        <div class="out" id="deadOut">두 차량이 교차로에서 서로의 진행 노드를 점유 → 순환 대기 → 감지 → 한 대 우회로 해소.</div>
+      </div>
+      <div class="lc-note">시뮬레이터는 데드락 발생 시 <b>Deadlocks 카운터</b>가 오르고 화면이 잠깐 붉게 점멸하며, <b>원인(관련 차량·노드)</b>이 패널에 표시됩니다.</div>` },
+
+    { id:"kpi", title:"⑩ KPI Academy", html:()=>`
+      <h2>KPI Academy</h2>
+      <p class="lead">시뮬레이터 하단 지표의 의미를 정확히 이해합니다.</p>
+      <table class="lc-table"><tr><th>KPI</th><th>의미</th><th>높을수록/낮을수록</th></tr>
+        <tr><td><b>Throughput</b></td><td>단위 시간당 완료 Lot 수</td><td>높을수록 좋음(생산성)</td></tr>
+        <tr><td><b>Completed Lots</b></td><td>누적 완료 Lot</td><td>높을수록 좋음</td></tr>
+        <tr><td><b>Avg Cycle Time</b></td><td>Lot 발생→완료까지 총 시간(대기 포함)</td><td>낮을수록 좋음</td></tr>
+        <tr><td><b>Avg Delivery Time</b></td><td>픽업→전달 순수 운반 시간</td><td>낮을수록 좋음</td></tr>
+        <tr><td><b>Avg Waiting</b></td><td>차량이 차단되어 멈춰 있던 시간</td><td>낮을수록 좋음</td></tr>
+        <tr><td><b>Vehicle Utilization</b></td><td>유효 작업 중인 차량 비율</td><td>적정(과도하면 과밀)</td></tr>
+        <tr><td><b>Empty Travel Ratio</b></td><td>빈 차로 이동한 거리 비율</td><td>낮을수록 좋음(디스패칭 효율)</td></tr>
+        <tr><td><b>Congestion Rate</b></td><td>속도 저하·정체 차량 비율</td><td>낮을수록 좋음</td></tr>
+        <tr><td><b>Avg Queue Length</b></td><td>대기 중 Lot 평균 개수</td><td>낮을수록 좋음(처리 여력)</td></tr>
+        <tr><td><b>Deadlock Count</b></td><td>교착 발생 횟수</td><td>0이 이상적</td></tr>
+      </table>
+      <div class="lc-note">KPI는 서로 <b>트레이드오프</b> 관계입니다. 예: 차량을 늘리면 Throughput이 오르다가 어느 지점부터 과밀로 Congestion·Waiting이 급증해 오히려 떨어집니다(포화점).</div>` },
+
+    { id:"exp", title:"⑪ Experiment Lab", html:()=>`
+      <h2>Experiment Lab — 직접 실험하며 학습</h2>
+      <p class="lead">조건을 바꿔 실행하고, <b>왜</b> 결과가 달라졌는지 이해하는 것이 핵심입니다.</p>
+      <h3>추천 실험 시나리오</h3>
+      <div class="lc-grid">
+        <div class="lc-card"><h4>디스패칭 비교</h4><div class="lc-kv">같은 부하에서 <b>FIFO</b> vs <b>Nearest</b>. NVF가 Empty Travel↓ → Cycle Time↓ 확인.</div>
+          <a class="lc-link" href="${SIM_URL}?d=nvf&veh=12&lot=20" target="_blank" rel="noopener">NVF 실험 ↗</a></div>
+        <div class="lc-card"><h4>라우팅 비교</h4><div class="lc-kv">고혼잡에서 <b>A*</b> vs <b>Dynamic</b>. Dynamic이 Congestion↓ 확인.</div>
+          <a class="lc-link" href="${SIM_URL}?p=dynamic&veh=20&lot=40" target="_blank" rel="noopener">Dynamic 실험 ↗</a></div>
+        <div class="lc-card"><h4>포화점 찾기</h4><div class="lc-kv">차량을 8→30으로 늘리며 Throughput이 꺾이는 지점 관찰.</div>
+          <a class="lc-link" href="${SIM_URL}?veh=28&lot=40" target="_blank" rel="noopener">과밀 실험 ↗</a></div>
+        <div class="lc-card"><h4>교통제어 비교</h4><div class="lc-kv">고부하에서 <b>Static</b> vs <b>Reservation</b>. 기아 vs 안정 확인.</div>
+          <a class="lc-link" href="${SIM_URL}?t=reservation&veh=22&lot=45" target="_blank" rel="noopener">Reservation 실험 ↗</a></div>
+      </div>
+      <div class="lc-note">시뮬레이터의 <b>실험(A/B) 모드</b>를 쓰면 두 알고리즘을 동일 조건에서 자동 실행해 <b>Throughput·Delivery·Congestion 델타(%)</b>를 바로 비교해 줍니다.</div>
+      <h3>Digital Twin Research Mode</h3>
+      <p>이 모든 실험은 실제 SK하이닉스 OHT 제어 엔지니어가 수행하는 문제 — 디스패칭·라우팅·교통제어·혼잡·데드락·KPI 최적화 연구 — 의 축소판입니다.</p>` },
+  ];
+
+  /* ---------- 카드 헬퍼 ---------- */
+  function dispCard(name, concept, pros, cons, env, color) {
+    return `<div class="lc-card"><span class="lc-tag" style="background:${color}">${name}</span>
+      <div class="lc-kv" style="margin-bottom:6px">${concept}</div>
+      <div class="lc-kv"><b>장점</b> ${pros.join(", ")}</div>
+      <div class="lc-kv"><b>단점</b> ${cons.join(", ")}</div>
+      <div class="lc-kv"><b>적용</b> ${env}</div></div>`;
+  }
+
+  /* ---------- OHT 상태 전이 SVG ---------- */
+  function stateDiagramSVG() {
+    return `<svg viewBox="0 0 720 140" style="width:100%;height:auto;background:var(--surface-2);border-radius:10px;margin:8px 0">
+      ${[["Idle",60,"#34c77b"],["Dispatch",170,"#3b9bff"],["MoveToPickup",300,"#3b9bff"],["Pickup",430,"#3b9bff"],["LoadedMove",545,"#FF6B00"],["Delivery",660,"#FF6B00"]]
+        .map(([t,x,c],i)=>`<g><rect x="${x-44}" y="46" width="88" height="30" rx="8" fill="${c}"/><text x="${x}" y="65" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">${t}</text>${i<5?`<line x1="${x+44}" y1="61" x2="${x+44+22}" y2="61" stroke="#9aa8c2" stroke-width="2" marker-end="url(#ar)"/>`:""}</g>`).join("")}
+      <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#9aa8c2"/></marker></defs>
+      <line x1="660" y1="80" x2="660" y2="105" stroke="#9aa8c2" stroke-width="2"/><line x1="660" y1="105" x2="60" y2="105" stroke="#9aa8c2" stroke-width="2"/><line x1="60" y1="105" x2="60" y2="80" stroke="#9aa8c2" stroke-width="2" marker-end="url(#ar)"/>
+      <text x="360" y="122" fill="#9aa8c2" font-size="10" text-anchor="middle">완료 후 Idle로 복귀 · 이동 중 차단=Waiting/Congestion, 교착=Recovery</text>
+    </svg>`;
+  }
+
+  /* ===================== 인터랙티브 데모 ===================== */
+  /* (1) 경로 탐색 시각화 (격자 BFS/Dijkstra/A*) */
+  const PATH = { algo:"astar", cols:18, rows:11, obst:new Set(), start:[1,5], goal:[16,5] };
+  function pathKey(c,r){return c+","+r;}
+  function pathNeighbors(c,r){return [[c+1,r],[c-1,r],[c,r+1],[c,r-1]].filter(([x,y])=>x>=0&&y>=0&&x<PATH.cols&&y<PATH.rows&&!PATH.obst.has(pathKey(x,y)));}
+  function runPath(){
+    const s=PATH.start, g=PATH.goal, algo=PATH.algo;
+    const h=(c,r)=>Math.abs(c-g[0])+Math.abs(r-g[1]);
+    const open=[{c:s[0],r:s[1],g:0,f:0}], came={}, gsc={[pathKey(...s)]:0}, visited=new Set(), order=[];
+    while(open.length){
+      open.sort((a,b)=> algo==="astar"? a.f-b.f : algo==="dijkstra"? a.g-b.g : a.g-b.g); // shortest=BFS(=hop, g=hop)
+      const cur=open.shift(), ck=pathKey(cur.c,cur.r);
+      if(visited.has(ck))continue; visited.add(ck); order.push([cur.c,cur.r]);
+      if(cur.c===g[0]&&cur.r===g[1])break;
+      for(const [nc,nr] of pathNeighbors(cur.c,cur.r)){
+        const nk=pathKey(nc,nr), step=1, ng=cur.g+step;
+        if(ng<(gsc[nk]??1e9)){gsc[nk]=ng;came[nk]=ck;open.push({c:nc,r:nr,g:ng,f: algo==="astar"? ng+h(nc,nr): ng});}
+      }
+    }
+    // 경로 복원
+    let path=[], k=pathKey(...g);
+    if(visited.has(k)){while(k){const [c,r]=k.split(",").map(Number);path.unshift([c,r]);k=came[k];}}
+    return {order, path, explored:visited.size};
+  }
+  function drawPath(){
+    const cv=$("#pathCv"); if(!cv)return; const ctx=cv.getContext("2d");
+    const W=cv.clientWidth||640; cv.width=W; cv.height=240; const cw=W/PATH.cols, ch=240/PATH.rows;
+    const {order,path,explored}=runPath();
+    ctx.clearRect(0,0,W,240);
+    // 탐색 범위
+    order.forEach(([c,r])=>{ctx.fillStyle="rgba(91,155,213,0.28)";ctx.fillRect(c*cw,r*ch,cw-1,ch-1);});
+    // 장애물
+    PATH.obst.forEach(k=>{const[c,r]=k.split(",").map(Number);ctx.fillStyle="#33405c";ctx.fillRect(c*cw,r*ch,cw-1,ch-1);});
+    // 경로
+    ctx.fillStyle="#FF6B00"; path.forEach(([c,r])=>ctx.fillRect(c*cw+cw*0.2,r*ch+ch*0.2,cw*0.6,ch*0.6));
+    // start/goal
+    ctx.fillStyle="#34c77b";ctx.fillRect(PATH.start[0]*cw,PATH.start[1]*ch,cw-1,ch-1);
+    ctx.fillStyle="#ff4d4d";ctx.fillRect(PATH.goal[0]*cw,PATH.goal[1]*ch,cw-1,ch-1);
+    $("#pathOut").innerHTML=`알고리즘 <b>${PATH.algo}</b> · 탐색한 칸 <b>${explored}</b> · 경로 길이 <b>${path.length}</b> (초록=출발, 빨강=목표, 옅은 파랑=탐색, 주황=경로)`;
+  }
+  function initPathDemo(){
+    const cv=$("#pathCv"); if(!cv||cv._init)return; cv._init=true;
+    $("#pathCtl").innerHTML=["shortest","dijkstra","astar"].map(a=>`<button data-a="${a}" class="${a===PATH.algo?'sel':''}">${a==="shortest"?"Shortest":a==="dijkstra"?"Dijkstra":"A*"}</button>`).join("")+`<button data-clr="1">장애물 초기화</button>`;
+    $("#pathCtl").querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{PATH.algo=b.dataset.a;$("#pathCtl").querySelectorAll("[data-a]").forEach(x=>x.classList.toggle("sel",x.dataset.a===PATH.algo));drawPath();});
+    $("#pathCtl").querySelector("[data-clr]").onclick=()=>{PATH.obst.clear();drawPath();};
+    cv.onclick=(e)=>{const r=cv.getBoundingClientRect();const c=Math.floor((e.clientX-r.left)/(r.width/PATH.cols));const rr=Math.floor((e.clientY-r.top)/(r.height/PATH.rows));const k=pathKey(c,rr);if((c===PATH.start[0]&&rr===PATH.start[1])||(c===PATH.goal[0]&&rr===PATH.goal[1]))return;PATH.obst.has(k)?PATH.obst.delete(k):PATH.obst.add(k);drawPath();};
+    // 기본 장애물 벽
+    for(let r=2;r<9;r++)PATH.obst.add(pathKey(9,r));
+    drawPath();
+  }
+
+  /* (2) 디스패칭 차량 선택 비교 */
+  const DISP = { algo:"fifo", pick:[330,40], veh:[{x:60,y:60,load:1,t:5},{x:200,y:170,load:3,t:2},{x:430,y:150,load:0,t:8},{x:540,y:70,load:2,t:1}] };
+  function chooseVeh(algo){
+    const v=DISP.veh;
+    if(algo==="fifo")return 0;                                   // 첫 차량(요청 순)
+    if(algo==="nvf")return v.reduce((m,x,i)=>Math.hypot(x.x-DISP.pick[0],x.y-DISP.pick[1])<Math.hypot(v[m].x-DISP.pick[0],v[m].y-DISP.pick[1])?i:m,0);
+    if(algo==="llv")return v.reduce((m,x,i)=>x.load<v[m].load?i:m,0);
+    return v.reduce((m,x,i)=>x.t<v[m].t?i:m,0);                  // eav: 가장 빨리 가용(t 최소)
+  }
+  function drawDisp(){
+    const cv=$("#dispCv"); if(!cv)return; const ctx=cv.getContext("2d"); const W=cv.clientWidth||640; cv.width=W;cv.height=220;
+    const sx=W/640; ctx.clearRect(0,0,W,220);
+    const sel=chooseVeh(DISP.algo);
+    // 선택 차량까지 선
+    ctx.strokeStyle="#FF6B00";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(DISP.veh[sel].x*sx,DISP.veh[sel].y);ctx.lineTo(DISP.pick[0]*sx,DISP.pick[1]);ctx.stroke();
+    // 픽업 ★
+    ctx.fillStyle="#ffd23f";ctx.font="20px sans-serif";ctx.fillText("★",DISP.pick[0]*sx-9,DISP.pick[1]+18);
+    DISP.veh.forEach((v,i)=>{ctx.fillStyle=i===sel?"#FF6B00":"#5B9BD5";ctx.beginPath();ctx.arc(v.x*sx,v.y,11,0,7);ctx.fill();
+      ctx.fillStyle="#fff";ctx.font="10px sans-serif";ctx.fillText("V"+(i+1),v.x*sx-7,v.y+3);
+      ctx.fillStyle="#9aa8c2";ctx.fillText("부하"+v.load+"·가용"+v.t+"s",v.x*sx-22,v.y+24);});
+    const names={fifo:"FIFO(요청순 V1)",nvf:"Nearest(최근접)",llv:"Least Loaded(부하최소)",eav:"Earliest(가용최소)"};
+    $("#dispOut").innerHTML=`<b>${names[DISP.algo]}</b> → <b style="color:var(--orange)">V${sel+1}</b> 선택. 알고리즘마다 다른 차량을 고르며, 이는 Empty Travel·부하균형·응답속도의 트레이드오프로 이어집니다.`;
+  }
+  function initDispDemo(){
+    const cv=$("#dispCv"); if(!cv||cv._init)return; cv._init=true;
+    $("#dispCtl").innerHTML=["fifo","nvf","llv","eav"].map(a=>`<button data-a="${a}" class="${a===DISP.algo?'sel':''}">${a.toUpperCase()}</button>`).join("");
+    $("#dispCtl").querySelectorAll("button").forEach(b=>b.onclick=()=>{DISP.algo=b.dataset.a;$("#dispCtl").querySelectorAll("button").forEach(x=>x.classList.toggle("sel",x.dataset.a===DISP.algo));drawDisp();});
+    drawDisp();
+  }
+
+  /* (3) 데드락 재현 */
+  let deadRAF=null;
+  function initDeadDemo(){
+    const cv=$("#deadCv"); if(!cv)return; const ctx=cv.getContext("2d"); const W=cv.clientWidth||640; cv.width=W;cv.height=200;
+    let phase=0,t=0; // 0 접근,1 교착,2 감지,3 회복
+    const cx=W/2, cy=100;
+    function frame(){
+      ctx.clearRect(0,0,W,200);
+      // 교차 레일
+      ctx.strokeStyle="#33405c";ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(cx-160,cy);ctx.lineTo(cx+160,cy);ctx.moveTo(cx,cy-70);ctx.lineTo(cx,cy+70);ctx.stroke();
+      t+=0.012; let a={x:cx-90,y:cy}, b={x:cx,y:cy-50};
+      if(phase===0){a.x=cx-90+Math.min(t,1)*60;b.y=cy-50+Math.min(t,1)*30;if(t>=1){phase=1;t=0;}}
+      else if(phase===1){a.x=cx-30;b.y=cy-20; if(t>1.2){phase=2;t=0;}}
+      else if(phase===2){a.x=cx-30;b.y=cy-20; if(t>1.2){phase=3;t=0;}}
+      else {a.x=cx-30 - Math.min(t,1)*70; b.y=cy-20 - Math.min(t,1)*40;} // 회복: A 후진 우회, B 진행
+      // 차량
+      ctx.fillStyle=phase===1||phase===2?"#ff4d4d":phase===3?"#b06bff":"#FF6B00";ctx.beginPath();ctx.arc(a.x,a.y,12,0,7);ctx.fill();
+      ctx.fillStyle=phase>=1?(phase===3?"#34c77b":"#ffd23f"):"#3b9bff";ctx.beginPath();ctx.arc(b.x,b.y,12,0,7);ctx.fill();
+      ctx.fillStyle="#fff";ctx.font="10px sans-serif";ctx.fillText("A",a.x-3,a.y+3);ctx.fillText("B",b.x-3,b.y+3);
+      const msg=["① 두 차량이 교차로로 접근","② 교착: A는 B의 노드를, B는 A의 노드를 상호 대기","③ 감지: wait-for 사이클(A→B→A) 발견!","④ 회복: A를 버퍼로 우회시켜 고리 해소 → B 진행"][phase];
+      ctx.fillStyle=phase===2?"#ff4d4d":"#e8edf6";ctx.font="12px sans-serif";ctx.fillText(msg,12,22);
+      $("#deadOut").innerHTML=msg;
+      deadRAF=requestAnimationFrame(frame);
+    }
+    if($("#deadRun"))$("#deadRun").onclick=()=>{phase=0;t=0;};
+    if(deadRAF)cancelAnimationFrame(deadRAF); frame();
+  }
+
+  /* ===================== 렌더/네비 ===================== */
+  function show(id) {
+    const sec = SECTIONS.find(s=>s.id===id); if(!sec)return;
+    $("#lc-content").innerHTML = `<div class="lc-sec">${sec.html()}</div>`;
+    $("#lc-nav").querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.id===id));
+    if(deadRAF){cancelAnimationFrame(deadRAF);deadRAF=null;}
+    if(id==="path") setTimeout(initPathDemo,30);
+    if(id==="disp") setTimeout(initDispDemo,30);
+    if(id==="dead") setTimeout(initDeadDemo,30);
+    try{ document.querySelector("#sv-learn").scrollIntoView({block:"nearest"}); }catch(e){}
+  }
+
+  function init() {
+    if(built) return; built = true;
+    injectStyle();
+    const host = $("#sv-learn"); if(!host)return;
+    host.innerHTML = `
+      <h2 class="section-title">🎓 AMHS 학습 센터</h2>
+      <p class="section-sub">반도체 FAB 물류 제어를 체계적으로 학습하세요 — Digital Twin부터 Dispatching·Routing·Traffic·Congestion·Deadlock·KPI까지.</p>
+      <div class="lc-wrap">
+        <div class="lc-nav" id="lc-nav">${SECTIONS.map(s=>`<button data-id="${s.id}">${s.title}</button>`).join("")}</div>
+        <div class="lc-body" id="lc-content"></div>
+      </div>`;
+    $("#lc-nav").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.id)));
+    show("dt");
   }
   return { init };
 })();
